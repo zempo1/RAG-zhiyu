@@ -120,7 +120,7 @@
 
     &:hover {
       color: var(--text-primary);
-      background: rgba(255, 255, 255, 0.04);
+      background: light-dark(rgba(51, 85, 126, 0.045), rgba(255, 255, 255, 0.04));
     }
 
     &.active {
@@ -160,7 +160,7 @@
     cursor: pointer;
   }
   p {
-    color: #f1b7b7;
+    color: light-dark(#9a294c, #f1b7b7);
     overflow-wrap: anywhere;
   }
 }
@@ -169,7 +169,7 @@
   align-items: center;
   gap: 9px;
   text-align: left;
-  color: #e8f1f7;
+  color: light-dark(#255b8c, #e8f1f7);
 }
 .generation-indicator {
   width: 7px;
@@ -181,12 +181,12 @@
 .generation-percent {
   margin-left: auto;
   font-variant-numeric: tabular-nums;
-  color: #8dd8e0;
+  color: light-dark(#255b8c, #8dd8e0);
 }
 .generation-track {
   height: 5px;
   border-radius: 10px;
-  background: #29323b;
+  background: light-dark(#edf4fc, #29323b);
   overflow: hidden;
   margin: 14px 0 10px;
 }
@@ -196,7 +196,7 @@
   width: 100%;
   transform-origin: left;
   border-radius: inherit;
-  background: linear-gradient(90deg, #358da5, #8bdde0);
+  background: linear-gradient(90deg, light-dark(#365dcc, #358da5), #8bdde0);
   transition: transform 900ms ease;
   position: relative;
 }
@@ -204,7 +204,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, #ffffff45, transparent);
+  background: linear-gradient(90deg, transparent, light-dark(rgba(51, 85, 126, 0.270588), #ffffff45), transparent);
   animation: generation-shimmer 2s linear infinite;
 }
 .generation-footer {
@@ -219,7 +219,7 @@
   margin: 0;
   background: transparent;
   border: 0;
-  color: #a5bac7;
+  color: light-dark(#255b8c, #a5bac7);
   min-height: 32px;
 }
 @keyframes generation-shimmer {

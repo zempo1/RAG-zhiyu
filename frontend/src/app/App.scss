@@ -1,13 +1,34 @@
 :root {
-  --bg-app: #09090b;
-  --bg-sidebar: #121214;
-  --bg-card: #1c1c1f;
-  --bg-hover: #27272a;
-  --text-primary: #f4f4f5;
-  --text-secondary: #a1a1aa;
-  --border-color: #27272a;
-  --primary-gradient: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
-  --accent-color: #8b5cf6;
+  --bg-app: light-dark(#f8fafc, #09090b);
+  --bg-sidebar: light-dark(#ffffff, #121214);
+  --bg-card: light-dark(#f1f5f9, #1c1c1f);
+  --bg-hover: light-dark(#e7edf6, #27272a);
+  --text-primary: light-dark(#15171b, #f4f4f5);
+  --text-secondary: light-dark(#394253, #a1a1aa);
+  --border-color: light-dark(#dce4ee, #27272a);
+  --primary-gradient: linear-gradient(
+    135deg,
+    light-dark(#245dd8, #7c3aed) 0%,
+    light-dark(#6845d4, #06b6d4) 100%
+  );
+  --accent-color: light-dark(#345fcc, #8b5cf6);
+}
+
+:root:not(.dark) {
+  --el-color-primary: #285dc5;
+  --el-color-primary-light-3: #4271ce;
+  --el-color-primary-light-5: #7193dc;
+  --el-color-primary-light-7: #a9bce9;
+  --el-color-primary-light-8: #cfdbf3;
+  --el-color-primary-light-9: #eaf0ff;
+  --el-color-primary-dark-2: #204ba0;
+  --el-text-color-primary: #15171b;
+  --el-text-color-regular: #272c35;
+  --el-text-color-secondary: #394253;
+  --el-text-color-placeholder: #616e81;
+  --el-border-color: #cbd6e5;
+  --el-border-color-light: #dce4ee;
+  --el-border-color-lighter: #e3eaf2;
 }
 
 body {
@@ -20,6 +41,77 @@ body {
     system-ui,
     -apple-system,
     sans-serif;
+}
+
+.account-settings-menu.el-popper {
+  padding: 4px;
+  border-radius: 12px;
+  border-color: var(--border-color);
+  background: var(--bg-sidebar);
+}
+
+.account-settings-menu .el-dropdown-menu {
+  min-width: 158px;
+  padding: 2px;
+  background: var(--bg-sidebar);
+}
+
+.account-settings-menu .el-dropdown-menu__item {
+  min-height: 38px;
+  border-radius: 6px;
+  color: var(--text-primary);
+}
+
+.account-settings-menu .el-dropdown-menu__item:is(:hover, :focus, .is-current-theme) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.account-settings-menu .theme-check {
+  margin-inline: auto 0;
+  padding-inline-start: 12px;
+  color: var(--accent-color);
+}
+
+.account-settings-menu .theme-menu-row > .el-dropdown {
+  display: flex;
+}
+
+.theme-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.theme-menu-trigger:is(:hover, :focus-visible, [aria-expanded="true"]) {
+  background: var(--bg-hover);
+}
+
+.theme-menu-trigger .theme-chevron {
+  margin-inline-start: auto;
+}
+
+.account-settings-trigger,
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.account-settings-trigger:focus-visible,
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
 }
 
 ::-webkit-scrollbar {

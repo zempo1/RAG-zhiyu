@@ -17,7 +17,7 @@
   }
 }
 .qa-control-error {
-  color: #ff939b;
+  color: light-dark(#9a294c, #ff939b);
   font-size: 13px;
 }
 @media (max-width: 768px) {
@@ -26,7 +26,7 @@
   }
 }
 .qa-control-error button {
-  color: #d7c8ff;
+  color: light-dark(#51408a, #d7c8ff);
   background: transparent;
   border: 0;
   cursor: pointer;
@@ -38,9 +38,9 @@
   margin-top: 8px;
 }
 .debug-trigger {
-  color: #d7c8ff;
-  background: #262031;
-  border: 1px solid #4c3b69;
+  color: light-dark(#51408a, #d7c8ff);
+  background: light-dark(#eae2f7, #262031);
+  border: 1px solid light-dark(#c8bbdf, #4c3b69);
   border-radius: 7px;
   padding: 7px 10px;
   min-height: 36px;
@@ -51,7 +51,7 @@
 }
 .debug-trigger:focus-visible,
 .qa-control-error button:focus-visible {
-  outline: 2px solid #b49aff;
+  outline: 2px solid light-dark(#6a53bc, #b49aff);
   outline-offset: 3px;
 }
 .retrieval-debug {
@@ -84,7 +84,7 @@
   }
   h3,
   summary {
-    color: #d7c8ff;
+    color: light-dark(#51408a, #d7c8ff);
     font-size: 14px;
     margin: 0 0 10px;
   }

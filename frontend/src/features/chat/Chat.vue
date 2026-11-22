@@ -710,21 +710,21 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   align-items: center;
   font-size: 12px;
-  color: #7b8497;
+  color: light-dark(#46566d, #7b8497);
 }
 .citation-list button,
 .retrieved-sources button {
-  border: 1px solid #4c3b69;
+  border: 1px solid light-dark(#c8bbdf, #4c3b69);
   border-radius: 6px;
   padding: 5px 8px;
-  background: #262031;
-  color: #d7c8ff;
+  background: light-dark(#eae2f7, #262031);
+  color: light-dark(#51408a, #d7c8ff);
   cursor: pointer;
   text-align: left;
 }
 .retrieved-sources {
   margin-top: 12px;
-  color: #7b8497;
+  color: light-dark(#46566d, #7b8497);
   font-size: 12px;
 }
 .retrieved-sources button {
@@ -743,20 +743,20 @@ onBeforeUnmount(() => {
 }
 .source-location,
 .interrupted-label {
-  color: #d5bb90;
+  color: light-dark(#80520d, #d5bb90);
   font-size: 12px;
 }
 .task-error {
   margin: 4px 0 8px;
-  color: var(--el-color-danger, #ff939b);
+  color: var(--el-color-danger, light-dark(#9a294c, #ff939b));
   font-size: 13px;
   line-height: 1.6;
 }
 :deep(.inline-citation) {
   border: 0;
   border-radius: 4px;
-  color: #d7c8ff;
-  background: #30243f;
+  color: light-dark(#51408a, #d7c8ff);
+  background: light-dark(#eae2f7, #30243f);
   padding: 0 4px;
   cursor: pointer;
   font: inherit;

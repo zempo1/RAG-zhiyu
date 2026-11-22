@@ -8,7 +8,7 @@
   }
 
   :deep(.el-upload-dragger) {
-    background: rgba(255, 255, 255, 0.02);
+    background: light-dark(rgba(51, 85, 126, 0.045), rgba(255, 255, 255, 0.02));
     border: 1px dashed var(--border-color);
     padding: 28px 16px;
     height: auto;
@@ -58,7 +58,7 @@
   // ——— 上传中 ———
   .uploading-state {
     background: rgba(139, 92, 246, 0.06);
-    border: 1px solid rgba(139, 92, 246, 0.2);
+    border: 1px solid light-dark(#6a53bc, rgba(139, 92, 246, 0.2));
     border-radius: 12px;
     padding: 14px 16px;
     display: flex;
@@ -79,7 +79,7 @@
 
         &.is-paused {
           animation: none;
-          color: #f59e0b;
+          color: light-dark(#80520d, #f59e0b);
         }
       }
 
@@ -115,7 +115,7 @@
   // ——— 已上传 ———
   .uploaded-state {
     background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    border: 1px solid light-dark(#8bc7ad, rgba(16, 185, 129, 0.2));
     border-radius: 12px;
     padding: 12px 16px;
     display: flex;
@@ -130,7 +130,7 @@
       flex: 1;
 
       .success-icon {
-        color: #10b981;
+        color: light-dark(#16644d, #10b981);
         font-size: 20px;
         flex-shrink: 0;
       }
@@ -154,13 +154,13 @@
 
     :deep(.el-button--danger) {
       background: transparent;
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      color: #ef4444;
+      border: 1px solid light-dark(#b84c67, rgba(239, 68, 68, 0.2));
+      color: light-dark(#9a294c, #ef4444);
 
       &:hover {
         background: #ef4444;
         color: white;
-        border-color: #ef4444;
+        border-color: light-dark(#b84c67, #ef4444);
       }
     }
   }
@@ -170,7 +170,7 @@
     border: 1px solid var(--border-color);
     border-radius: 10px;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.02);
+    background: light-dark(rgba(51, 85, 126, 0.045), rgba(255, 255, 255, 0.02));
 
     .history-header {
       display: flex;
@@ -229,7 +229,7 @@
         gap: 8px;
         padding: 8px 12px;
         transition: background 0.15s;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid light-dark(#dce4ee, rgba(255, 255, 255, 0.03));
         cursor: default;
 
         &:last-child {
@@ -307,7 +307,7 @@
             &:focus-visible,
             &[aria-expanded="true"] {
               color: var(--text-primary);
-              background: rgba(255, 255, 255, 0.08);
+              background: light-dark(rgba(51, 85, 126, 0.08), rgba(255, 255, 255, 0.08));
             }
 
             &:focus-visible {
@@ -365,8 +365,8 @@
 :global(.source-actions-menu.el-popper) {
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  background: var(--bg-secondary, #1c1c20);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+  background: var(--bg-secondary, light-dark(#f1f5f9, #1c1c20));
+  box-shadow: 0 8px 28px light-dark(rgba(35, 55, 92, 0.15), rgba(0, 0, 0, 0.3));
   overflow: hidden;
 }
 

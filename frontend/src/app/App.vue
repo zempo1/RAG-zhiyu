@@ -145,6 +145,7 @@ import {
   type RightPanelMode,
 } from "../utils/panel-layout";
 import { useToast } from "../composables/useToast";
+import { applySessionTheme } from "../composables/useTheme";
 import Sidebar from "../features/sidebar/Sidebar.vue";
 import Chat from "../features/chat/Chat.vue";
 import Workbench from "../features/workbench/Workbench.vue";
@@ -331,6 +332,7 @@ const clearReader = () => {
 };
 
 const isLoggedIn = computed(() => !!authToken.value);
+watch(isLoggedIn, applySessionTheme, { immediate: true, flush: "sync" });
 
 const onAuthSuccess = async (name: string) => {
   authToken.value = localStorage.getItem("token");

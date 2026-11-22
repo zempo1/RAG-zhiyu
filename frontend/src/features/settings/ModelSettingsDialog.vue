@@ -448,7 +448,7 @@ defineExpose({ open });
 .field-hint,
 .settings-source,
 .legacy-import {
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-secondary, light-dark(#46566d, #9ca3af));
   font-size: 13px;
   line-height: 1.6;
 }

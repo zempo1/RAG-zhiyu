@@ -217,8 +217,8 @@
         }
 
         &.active {
-          background: var(--bg-hover);
-          color: white;
+          background: light-dark(#dce6f5, var(--bg-hover));
+          color: var(--text-primary);
         }
 
         .chat-title-wrapper {
@@ -251,8 +251,8 @@
             border-radius: 4px;
 
             &:hover {
-              background: rgba(255, 255, 255, 0.1);
-              color: #ef4444;
+              background: light-dark(rgba(51, 85, 126, 0.1), rgba(255, 255, 255, 0.1));
+              color: light-dark(#9a294c, #ef4444);
             }
           }
         }
@@ -319,12 +319,12 @@
           cursor: pointer;
 
           &:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: light-dark(rgba(51, 85, 126, 0.1), rgba(255, 255, 255, 0.1));
             color: var(--text-primary);
           }
 
           &.logout:hover {
-            color: #ef4444;
+            color: light-dark(#9a294c, #ef4444);
           }
         }
       }
