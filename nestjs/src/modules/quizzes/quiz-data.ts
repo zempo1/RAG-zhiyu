@@ -6,6 +6,7 @@ export interface QuizQuestion {
   id: string;
   type: "SINGLE" | "MULTIPLE";
   stem: string;
+  knowledgePoint?: string;
   options: { id: string; text: string }[];
   correctOptionIds: string[];
   explanation: string;
@@ -25,6 +26,16 @@ export class QuizValidationError extends ApiError {
   constructor(reason: string) {
     super(502, `测验校验失败：${reason}`);
   }
+}
+export function cleanQuizKnowledgePoint(value: unknown): string {
+  return typeof value === "string"
+    ? Array.from(value.normalize("NFKC").replace(/\s+/gu, " ").trim()).slice(0, 40).join("")
+    : "";
+}
+export function normalizeQuizTopic(label: string): string {
+  return cleanQuizKnowledgePoint(label)
+    .replace(/[\s\p{P}]/gu, "")
+    .toLowerCase();
 }
 /** Match only layout whitespace differences, then retain the actual contiguous original text. */
 export function matchQuizQuote(source: string, quote: string): string | null {
@@ -137,6 +148,9 @@ export function normalizeQuestions(
       id: `q${previous.length + index + 1}`,
       type: q.type,
       stem,
+      ...(cleanQuizKnowledgePoint(q.knowledgePoint)
+        ? { knowledgePoint: cleanQuizKnowledgePoint(q.knowledgePoint) }
+        : {}),
       options,
       correctOptionIds: [...correct].sort(),
       explanation: q.explanation.trim(),

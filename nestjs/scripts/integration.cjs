@@ -11,6 +11,7 @@ const result = spawnSync(
     "--runInBand",
     "--runTestsByPath",
     "test/mysql.e2e-spec.ts",
+    "test/quiz-review-mysql.e2e-spec.ts",
     "test/pipeline.e2e-spec.ts",
   ],
   {

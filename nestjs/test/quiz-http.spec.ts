@@ -35,6 +35,7 @@ describe("测验 HTTP 契约", () => {
               {
                 type: "SINGLE",
                 stem: "测试知识点",
+                knowledgePoint: "原文知识点",
                 options: ["A", "B", "C", "D"].map((id) => ({ id, text: `选项${id}` })),
                 correctOptionIds: ["A"],
                 explanation: "解析",

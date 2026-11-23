@@ -84,11 +84,71 @@
           <span class="name">{{ username }}</span>
         </div>
         <div class="user-actions" v-if="!isCollapsed">
-          <el-tooltip content="账户设置" placement="top">
-            <el-icon class="action-icon" @click.stop="handleChangePassword">
-              <Setting />
-            </el-icon>
-          </el-tooltip>
+          <el-dropdown
+            ref="accountMenu"
+            trigger="click"
+            placement="top-end"
+            popper-class="account-settings-menu"
+            @command="handleAccountCommand"
+          >
+            <button
+              type="button"
+              class="action-icon account-settings-trigger"
+              aria-label="账户设置"
+              title="账户设置"
+            >
+              <el-icon><Setting /></el-icon>
+            </button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <li role="none" class="theme-menu-row">
+                  <el-dropdown
+                    :trigger="['hover', 'click']"
+                    placement="right-start"
+                    :popper-options="{ modifiers: [{ name: 'flip', enabled: false }] }"
+                    :show-timeout="100"
+                    :hide-timeout="180"
+                    popper-class="account-settings-menu theme-settings-submenu"
+                    @command="handleAccountCommand"
+                  >
+                    <button type="button" class="theme-menu-trigger" aria-label="当前主题">
+                      <el-icon><Sunny v-if="theme === 'light'" /><Moon v-else /></el-icon>
+                      {{ theme === "light" ? "浅色模式" : "深色模式" }}
+                      <el-icon class="theme-chevron"><ArrowRight /></el-icon>
+                    </button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item
+                          command="light"
+                          :class="{ 'is-current-theme': theme === 'light' }"
+                        >
+                          <el-icon><Sunny /></el-icon>浅色模式
+                          <el-icon
+                            v-if="theme === 'light'"
+                            class="theme-check"
+                            aria-label="当前主题"
+                            ><Check
+                          /></el-icon>
+                        </el-dropdown-item>
+                        <el-dropdown-item
+                          command="dark"
+                          :class="{ 'is-current-theme': theme === 'dark' }"
+                        >
+                          <el-icon><Moon /></el-icon>深色模式
+                          <el-icon v-if="theme === 'dark'" class="theme-check" aria-label="当前主题"
+                            ><Check
+                          /></el-icon>
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </li>
+                <el-dropdown-item command="profile" divided>
+                  <el-icon><EditPen /></el-icon>修改资料
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <el-tooltip content="退出登录" placement="top">
             <el-icon class="action-icon logout" @click.stop="handleLogout">
               <SwitchButton />
@@ -111,6 +171,7 @@
 import { ref, computed } from "vue";
 import Upload from "../upload/Upload.vue";
 import ChangePasswordDialog from "../account/ChangePasswordDialog.vue";
+import { theme, setTheme, type Theme } from "../../composables/useTheme";
 import {
   Plus,
   UserFilled,
@@ -120,9 +181,23 @@ import {
   ChatLineRound,
   Delete,
   Setting,
+  Sunny,
+  Moon,
+  Check,
+  ArrowRight,
   SwitchButton,
   Key,
 } from "@element-plus/icons-vue";
+
+const accountMenu = ref<{ handleClose: () => void }>();
+
+function handleAccountCommand(command: Theme | "profile") {
+  if (command === "profile") handleChangePassword();
+  else {
+    setTheme(command);
+    accountMenu.value?.handleClose();
+  }
+}
 import { useConfirm } from "../../composables/useConfirm";
 import { useToast } from "../../composables/useToast";
 import type { ChatItem } from "../../types";

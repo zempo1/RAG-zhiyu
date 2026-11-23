@@ -11,15 +11,15 @@
 }
 
 .confirm-dialog {
-  background: var(--bg-card, #1c1c1f);
-  border: 1px solid var(--border-color, #27272a);
+  background: var(--bg-card, light-dark(#f1f5f9, #1c1c1f));
+  border: 1px solid var(--border-color, light-dark(#ccd7e5, #27272a));
   border-radius: 16px;
   padding: 24px;
   max-width: 400px;
   width: 100%;
   box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    0 25px 50px -12px light-dark(rgba(35, 55, 92, 0.15), rgba(0, 0, 0, 0.5)),
+    0 0 0 1px light-dark(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.05));
 
   &.confirm-danger {
     .confirm-icon-wrapper {
@@ -49,19 +49,19 @@
   }
 
   &.icon-warning {
-    color: #f59e0b;
+    color: light-dark(#80520d, #f59e0b);
   }
 
   &.icon-danger {
-    color: #ef4444;
+    color: light-dark(#9a294c, #ef4444);
   }
 
   &.icon-success {
-    color: #22c55e;
+    color: light-dark(#16644d, #22c55e);
   }
 
   &.icon-info {
-    color: #3b82f6;
+    color: light-dark(#255b8c, #3b82f6);
   }
 }
 
@@ -74,13 +74,13 @@
   margin: 0 0 8px;
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--text-primary, #f4f4f5);
+  color: var(--text-primary, light-dark(#15171b, #f4f4f5));
 }
 
 .confirm-message {
   margin: 0;
   font-size: 0.9rem;
-  color: var(--text-secondary, #a1a1aa);
+  color: var(--text-secondary, light-dark(#354052, #a1a1aa));
   line-height: 1.6;
 }
 
@@ -110,19 +110,19 @@
   }
 
   &.btn-cancel {
-    background: var(--bg-hover, #27272a);
-    color: var(--text-secondary, #a1a1aa);
-    border: 1px solid var(--border-color, #27272a);
+    background: var(--bg-hover, light-dark(#e7edf6, #27272a));
+    color: var(--text-secondary, light-dark(#354052, #a1a1aa));
+    border: 1px solid var(--border-color, light-dark(#ccd7e5, #27272a));
 
     &:hover:not(:disabled) {
-      background: var(--bg-card, #1c1c1f);
-      color: var(--text-primary, #f4f4f5);
-      border-color: var(--text-secondary, #a1a1aa);
+      background: var(--bg-card, light-dark(#f1f5f9, #1c1c1f));
+      color: var(--text-primary, light-dark(#15171b, #f4f4f5));
+      border-color: var(--text-secondary, light-dark(#7891ad, #a1a1aa));
     }
   }
 
   &.btn-confirm {
-    background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
+    background: linear-gradient(135deg, light-dark(#365dcc, #7c3aed) 0%, #06b6d4 100%);
     color: white;
 
     &:hover:not(:disabled) {
@@ -136,7 +136,7 @@
   }
 
   &.btn-warning {
-    background: linear-gradient(135deg, #f59e0b 0%, #eab308 100%);
+    background: light-dark(#455777, #4e4a70);
   }
 
   &.btn-success {

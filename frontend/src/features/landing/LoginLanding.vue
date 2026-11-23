@@ -12,6 +12,15 @@
       <div class="nav-links">
         <el-button link @click="scrollTo('features')">特性</el-button>
         <el-button link @click="scrollTo('preview')">演示</el-button>
+        <button
+          type="button"
+          class="theme-toggle"
+          :aria-label="theme === 'light' ? '切换到深色模式' : '切换到浅色模式'"
+          :title="theme === 'light' ? '切换到深色模式' : '切换到浅色模式'"
+          @click="setTheme(theme === 'light' ? 'dark' : 'light')"
+        >
+          <el-icon><Moon v-if="theme === 'light'" /><Sunny v-else /></el-icon>
+        </button>
         <el-button type="primary" round class="nav-cta" @click="showAuth = true"
           >立即开始</el-button
         >
@@ -139,7 +148,17 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onBeforeUnmount } from "vue";
-import { ArrowRight, Document, Connection, Lock, User, Close } from "@element-plus/icons-vue";
+import {
+  ArrowRight,
+  Document,
+  Connection,
+  Lock,
+  User,
+  Close,
+  Moon,
+  Sunny,
+} from "@element-plus/icons-vue";
+import { theme, setTheme } from "../../composables/useTheme";
 import request from "../../utils/request";
 import { useToast } from "../../composables/useToast";
 

@@ -14,6 +14,10 @@ export class Quiz {
   @Column({ type: "int", name: "single_count" }) singleCount: number;
   @Column({ type: "int", name: "multiple_count" }) multipleCount: number;
   @Column({ type: "json" }) questions: QuizQuestion[];
+  @Column({ type: "varchar", length: 100, nullable: true, name: "review_topic_key" })
+  reviewTopicKey: string | null;
+  @Column({ type: "varchar", length: 80, nullable: true, name: "review_topic_label" })
+  reviewTopicLabel: string | null;
   @Column({ type: "datetime", precision: 6, name: "created_at" }) createdAt: string;
 }
 @Entity("quiz_attempts")

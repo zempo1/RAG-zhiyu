@@ -1,8 +1,8 @@
 :deep(.el-dialog) {
-  background: #1c1c1f;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: light-dark(#f1f5f9, #1c1c1f);
+  border: 1px solid light-dark(#dce4ee, rgba(255, 255, 255, 0.1));
   border-radius: 16px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 50px -12px light-dark(rgba(35, 55, 92, 0.15), rgba(0, 0, 0, 0.5));
   padding: 0;
   overflow: hidden;
 }
@@ -10,7 +10,7 @@
 :deep(.el-dialog__header) {
   margin: 0;
   padding: 20px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid light-dark(#dce4ee, rgba(255, 255, 255, 0.05));
 
   .el-dialog__title {
     color: var(--text-primary);
@@ -34,8 +34,8 @@
 
 :deep(.el-dialog__footer) {
   padding: 16px 24px;
-  background: rgba(0, 0, 0, 0.2);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: light-dark(#edf2f8, rgba(0, 0, 0, 0.2));
+  border-top: 1px solid light-dark(#dce4ee, rgba(255, 255, 255, 0.05));
 }
 
 .dialog-content {
@@ -66,8 +66,8 @@
       width: 48px;
       height: 48px;
       border-radius: 12px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: light-dark(rgba(51, 85, 126, 0.05), rgba(255, 255, 255, 0.05));
+      border: 1px solid light-dark(#dce4ee, rgba(255, 255, 255, 0.1));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -108,8 +108,8 @@
 
     .custom-input {
       :deep(.el-input__wrapper) {
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: light-dark(#edf2f8, rgba(0, 0, 0, 0.3));
+        border: 1px solid light-dark(#dce4ee, rgba(255, 255, 255, 0.1));
         box-shadow: none;
         border-radius: 8px;
         padding: 4px 11px;
@@ -118,7 +118,7 @@
         &:hover,
         &.is-focus {
           border-color: var(--accent-color);
-          background: rgba(0, 0, 0, 0.5);
+          background: light-dark(#edf2f8, rgba(0, 0, 0, 0.5));
         }
 
         .el-input__inner {
@@ -128,7 +128,7 @@
           font-size: 13px;
 
           &::placeholder {
-            color: #52525b;
+            color: light-dark(#354052, #52525b);
           }
         }
       }
@@ -147,12 +147,12 @@
 
   .cancel-btn {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid light-dark(#dce4ee, rgba(255, 255, 255, 0.1));
     color: var(--text-primary);
 
     &:hover {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(255, 255, 255, 0.2);
+      background: light-dark(rgba(51, 85, 126, 0.05), rgba(255, 255, 255, 0.05));
+      border-color: light-dark(#bccadc, rgba(255, 255, 255, 0.2));
     }
   }
 
@@ -226,7 +226,7 @@
   border-radius: 50%;
   background: var(--bg-card);
   color: var(--text-primary);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 4px 16px light-dark(rgba(35, 55, 92, 0.15), rgba(0, 0, 0, 0.24));
   font-size: 20px;
   cursor: pointer;
   transition:
@@ -338,7 +338,7 @@
     }
 
     :deep(.markdown-body) {
-      --table-rule: #3f3f46;
+      --table-rule: light-dark(#ccd7e5, #3f3f46);
       color: var(--text-primary);
       overflow-x: auto;
 
@@ -367,7 +367,7 @@
       }
 
       a {
-        color: #38bdf8;
+        color: light-dark(#255b8c, #38bdf8);
         text-decoration: none;
 
         &:hover {
@@ -420,7 +420,7 @@
       }
 
       tbody tr:nth-child(even) {
-        background: rgba(255, 255, 255, 0.025);
+        background: light-dark(rgba(51, 85, 126, 0.045), rgba(255, 255, 255, 0.025));
       }
 
       tbody tr:last-child td {
@@ -453,7 +453,7 @@
       }
 
       pre {
-        background: #000000;
+        background: light-dark(#f1f5f9, #000000);
         border: 1px solid var(--border-color);
         padding: 16px;
         border-radius: 8px;
@@ -470,7 +470,7 @@
 
       code {
         font-family: "Fira Code", monospace;
-        background: rgba(255, 255, 255, 0.1);
+        background: light-dark(rgba(51, 85, 126, 0.1), rgba(255, 255, 255, 0.1));
         padding: 2px 6px;
         border-radius: 4px;
         font-size: 0.9em;
@@ -541,7 +541,7 @@
     background: var(--bg-card);
     border-radius: 16px;
     border: 1px solid var(--border-color);
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 20px light-dark(rgba(35, 55, 92, 0.15), rgba(0, 0, 0, 0.2));
     display: flex;
     align-items: center;
     padding: 12px;

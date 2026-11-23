@@ -29,7 +29,7 @@
   input:focus-visible,
   summary:focus-visible,
   .pdf-scroll-container:focus-visible {
-    outline: 2px solid #a78bfa;
+    outline: 2px solid light-dark(#6a53bc, #a78bfa);
     outline-offset: 2px;
   }
 }
@@ -67,8 +67,8 @@
 .pdf-location-notice {
   margin: 0;
   padding: 10px 16px;
-  color: #e5ce9e;
-  background: #30291c;
+  color: light-dark(#80520d, #e5ce9e);
+  background: light-dark(#fff4df, #30291c);
   font-size: 12px;
   line-height: 1.6;
   flex-shrink: 0;
@@ -91,7 +91,7 @@
 .reader-evidence summary {
   cursor: pointer;
   padding: 12px 0;
-  color: #d7c8ff;
+  color: light-dark(#51408a, #d7c8ff);
 }
 .reader-evidence pre,
 .reader-markdown pre {
@@ -103,7 +103,7 @@
   margin: 0;
 }
 .reader-evidence-type {
-  color: #e5ce9e;
+  color: light-dark(#80520d, #e5ce9e);
   font-size: 12px;
 }
 .reader-markdown {
@@ -214,13 +214,13 @@
   flex-shrink: 0;
 }
 .pdf-error {
-  color: #f1b7b7;
+  color: light-dark(#9a294c, #f1b7b7);
 }
 .pdf-reading-area {
   flex: 1;
   position: relative;
   min-height: 0;
-  background: #303035;
+  background: light-dark(#e7edf6, #303035);
 }
 .pdf-reading-area.has-error {
   display: none;

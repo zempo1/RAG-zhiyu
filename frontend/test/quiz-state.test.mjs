@@ -31,5 +31,5 @@ test("explanation includes full options, actual selection and reference answer w
   assert.match(text, /B\. 定义二/);
   assert.match(text, /我选择了：A/);
   assert.match(text, /参考答案：B/);
-  assert.match(text, /核对/);
+  assert.match(text, /请结合原文深入讲解这个主题。/);
 });

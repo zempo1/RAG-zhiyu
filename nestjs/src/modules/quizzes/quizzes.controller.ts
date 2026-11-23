@@ -37,8 +37,7 @@ class GenerateQuizDto {
 class StartQuizAttemptDto {
   @IsUUID() requestId: string;
 }
-class QuizProgressDto {
-  @IsOptional() @IsInt() @Min(0) @Max(19) currentIndex?: number;
+export class QuizAnswerProgressDto {
   @IsOptional() @IsString() @MaxLength(10) questionId?: string;
   @IsOptional()
   @IsArray()
@@ -47,6 +46,9 @@ class QuizProgressDto {
   @IsIn(["A", "B", "C", "D"], { each: true })
   selectedOptionIds?: string[];
   @IsOptional() @IsBoolean() submit?: boolean;
+}
+class QuizProgressDto extends QuizAnswerProgressDto {
+  @IsOptional() @IsInt() @Min(0) @Max(19) currentIndex?: number;
 }
 @Controller("api/quizzes")
 export class QuizzesController {

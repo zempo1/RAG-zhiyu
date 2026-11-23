@@ -6,6 +6,7 @@ import { KnowledgeBasesService } from "../knowledge-bases/knowledge-bases.servic
 
 export const terminalTask = (status: string) =>
   ["completed", "failed", "partial_failed", "canceled"].includes(status);
+export const REVIEW_CLASSIFICATION = "quiz_review_classification";
 
 @Injectable()
 export class TasksService {
@@ -85,6 +86,7 @@ export class TasksService {
       ...(row.kind === "quiz"
         ? {
             quizResult: row.payload?.quizResult,
+            ...(row.payload?.reviewTopicKey ? { quizPurpose: "review_variant" } : {}),
             filename: row.payload?.filename,
             quizProgress: row.payload?.quizProgress
               ? Object.fromEntries(
@@ -135,7 +137,8 @@ export class TasksService {
 
   async cancelMindMap(id: number, userId: number) {
     const initial = await this.get(id, userId);
-    if (!["mindmap", "quiz"].includes(initial.kind)) throw new ApiError(409, "不支持取消此任务");
+    if (!["mindmap", "quiz", REVIEW_CLASSIFICATION].includes(initial.kind))
+      throw new ApiError(409, "不支持取消此任务");
     await this.store.transaction(async (tx) => {
       await tx.lock("knowledgeBases", initial.knowledgeBaseId);
       if (initial.documentId) await tx.lock("documents", initial.documentId);
@@ -222,6 +225,7 @@ export class TasksService {
 
   async retry(id: number, userId: number) {
     const initial = await this.get(id, userId);
+    if (initial.kind === REVIEW_CLASSIFICATION) throw new ApiError(409, "错题已改用手动分类");
     await this.store.transaction(async (tx) => {
       const kb = await tx.lock("knowledgeBases", initial.knowledgeBaseId);
       if (!kb || kb.deletedAt) {
@@ -262,7 +266,7 @@ export class TasksService {
         const task = await tx.lock("tasks", id);
         if (
           !task ||
-          !["failed", ...(task.kind === "qa" ? ["partial_failed"] : [])].includes(task.status) ||
+          !(task.status === "failed" || (task.status === "partial_failed" && task.kind === "qa")) ||
           !task.retryable
         )
           throw new ApiError(409, "任务不可重试");

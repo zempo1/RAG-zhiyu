@@ -29,7 +29,7 @@
   transition: border-color 0.2s;
 
   &:hover {
-    border-color: rgba(139, 92, 246, 0.3);
+    border-color: light-dark(#6a53bc, rgba(139, 92, 246, 0.3));
   }
 
   .analysis-header {
@@ -103,7 +103,7 @@
 
         &:hover {
           background: rgba(59, 130, 246, 0.15);
-          color: #3b82f6;
+          color: light-dark(#255b8c, #3b82f6);
         }
       }
 
@@ -118,7 +118,7 @@
 
         &:hover {
           background: rgba(239, 68, 68, 0.15);
-          color: #ef4444;
+          color: light-dark(#9a294c, #ef4444);
         }
       }
     }
@@ -132,7 +132,7 @@
     border-top: 1px solid var(--border-color);
     max-height: 380px;
     overflow-y: auto;
-    background: rgba(255, 255, 255, 0.02);
+    background: light-dark(rgba(51, 85, 126, 0.045), rgba(255, 255, 255, 0.02));
 
     :deep(h1) {
       font-size: 0.95rem;

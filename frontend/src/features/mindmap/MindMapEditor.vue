@@ -123,6 +123,7 @@ import { ref, shallowRef, watch, nextTick, onMounted, onBeforeUnmount } from "vu
 import { getMindMap, updateMindMap, type MindMap } from "../../api/mindmap";
 import { normalizeMindMap, isOversizedMindMap, type MindMapDocument } from "./mindmap-data";
 import { useToast } from "../../composables/useToast";
+import { theme } from "../../composables/useTheme";
 import "simple-mind-map/dist/simpleMindMap.esm.css";
 const props = defineProps<{ mapId: number }>();
 const emit = defineEmits<{
@@ -141,6 +142,49 @@ const toast = useToast(),
   saving = ref(false),
   oversized = ref(false),
   layout = ref("logicalStructure");
+function mapTheme(light: boolean) {
+  return {
+    backgroundColor: light ? "#f3f7fc" : "#111820",
+    lineColor: light ? "#7f9ebd" : "#547889",
+    lineWidth: 1.5,
+    lineStyle: "curve",
+    root: {
+      fillColor: light ? "#dceaff" : "#174e63",
+      color: light ? "#183865" : "#ffffff",
+      borderColor: light ? "#8daedb" : "#34839a",
+      borderWidth: 1,
+      borderRadius: 12,
+      fontSize: 19,
+      paddingX: 22,
+      paddingY: 14,
+    },
+    second: {
+      fillColor: light ? "#e9f1fb" : "#223543",
+      color: light ? "#244773" : "#f8fafc",
+      borderColor: light ? "#b9cce3" : "#3c5969",
+      borderWidth: 1,
+      borderRadius: 8,
+      fontSize: 16,
+      paddingX: 16,
+      paddingY: 10,
+    },
+    node: {
+      marginY: 14,
+      fillColor: light ? "#ffffff" : "#18242e",
+      color: light ? "#1e293b" : "#f1f5f9",
+      borderColor: "transparent",
+      borderRadius: 6,
+      fontSize: 15,
+      paddingX: 12,
+      paddingY: 7,
+    },
+    generalization: {
+      color: light ? "#1e293b" : "#f1f5f9",
+      fillColor: light ? "#e9f1fb" : "#223543",
+    },
+  };
+}
+watch(theme, (mode) => canvas.value?.setThemeConfig(mapTheme(mode === "light")));
 const documentData = shallowRef<MindMapDocument>();
 const layoutDropdown = shallowRef<any>();
 const layoutMenuOpen = ref(false);
@@ -203,43 +247,7 @@ async function load() {
       layout: layout.value,
       readonly: oversized.value,
       theme: "default",
-      themeConfig: {
-        backgroundColor: "#111820",
-        lineColor: "#547889",
-        lineWidth: 1.5,
-        lineStyle: "curve",
-        root: {
-          fillColor: "#174e63",
-          color: "#ffffff",
-          borderColor: "#34839a",
-          borderWidth: 1,
-          borderRadius: 12,
-          fontSize: 19,
-          paddingX: 22,
-          paddingY: 14,
-        },
-        second: {
-          fillColor: "#223543",
-          color: "#f8fafc",
-          borderColor: "#3c5969",
-          borderWidth: 1,
-          borderRadius: 8,
-          fontSize: 16,
-          paddingX: 16,
-          paddingY: 10,
-        },
-        node: {
-          marginY: 14,
-          fillColor: "#18242e",
-          color: "#f1f5f9",
-          borderColor: "transparent",
-          borderRadius: 6,
-          fontSize: 15,
-          paddingX: 12,
-          paddingY: 7,
-        },
-        generalization: { color: "#f1f5f9", fillColor: "#223543" },
-      },
+      themeConfig: mapTheme(theme.value === "light"),
     });
     canvas.value = instance;
     instance.on("node_tree_render_end", () => {
@@ -300,6 +308,7 @@ async function save() {
     const data = {
       ...documentData.value,
       ...full,
+      theme: documentData.value?.theme,
       schemaVersion: 2,
       meta: documentData.value?.meta,
     };

@@ -14,7 +14,7 @@
         class="reader-close"
         type="button"
         aria-label="关闭阅读器"
-        title="返回聊天"
+        title="关闭阅读器"
         @click="emit('close')"
       >
         <svg

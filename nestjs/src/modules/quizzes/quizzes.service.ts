@@ -9,22 +9,21 @@ import { TokenizerService } from "../embeddings/tokenizer.service";
 import { TasksService, terminalTask } from "../tasks/tasks.service";
 import { sealRuntimeModels } from "../model-settings/model-runtime";
 import { sealQaCredential } from "../tasks/qa-credentials";
-import {
-  presentQuestions,
-  scoreAnswers,
-  sameOptions,
-  validateCounts,
-  OPTION_IDS,
-  QuizQuestion,
-  Answers,
-} from "./quiz-data";
+import { presentQuestions, scoreAnswers, validateCounts, QuizQuestion, Answers } from "./quiz-data";
 import { QuizRunner } from "./quiz-runner";
+import { clearQuizReviews, recordWrongQuestion, updateQuizAnswer } from "./quiz-review-state";
 
 export interface ProgressInput {
   currentIndex?: number;
   questionId?: string;
   selectedOptionIds?: string[];
   submit?: boolean;
+}
+export interface ReviewGeneration {
+  topicKey: string;
+  topicLabel: string;
+  evidenceChunkIds: number[];
+  knowledgeBaseId: number;
 }
 @Injectable()
 export class QuizzesService {
@@ -43,9 +42,12 @@ export class QuizzesService {
     multipleCount: number,
     apiKey?: string,
     requestId: string = randomUUID(),
+    review?: ReviewGeneration,
   ) {
     validateCounts(singleCount, multipleCount);
     const doc = await this.documents.ready(documentId, userId);
+    if (review && review.knowledgeBaseId !== doc.knowledgeBaseId)
+      throw new ApiError(404, "来源不属于当前知识库");
     if (
       !doc.activeIndexRevisionId ||
       doc.status !== "ready" ||
@@ -75,12 +77,15 @@ export class QuizzesService {
         throw new ApiError(409, "来源已更新，请重新生成");
       const key = `quiz/${userId}/${requestId}`;
       const tasks = await tx.list("tasks", { userId, kind: "quiz" });
+      const sameReview = (task: Row) =>
+        (task.payload?.reviewTopicKey ?? null) === (review?.topicKey ?? null);
       const previous = tasks.find(
         (t) => t.idempotencyKey === key || t.payload?.requestIds?.includes(requestId),
       );
       if (previous) {
         if (
           previous.documentId !== doc.id ||
+          !sameReview(previous) ||
           previous.indexRevisionId !== doc.activeIndexRevisionId ||
           previous.payload?.singleCount !== singleCount ||
           previous.payload?.multipleCount !== multipleCount
@@ -88,9 +93,12 @@ export class QuizzesService {
           throw new ApiError(409, "requestId 已用于不同测验配置");
         return previous;
       }
+      if (review && (await tx.list("quizReviewPractices", { userId, requestId })).length)
+        throw new ApiError(409, "该请求标识已用于复练");
       const active = tasks.find(
         (t) =>
           t.documentId === doc.id &&
+          sameReview(t) &&
           t.indexRevisionId === doc.activeIndexRevisionId &&
           t.payload?.singleCount === singleCount &&
           t.payload?.multipleCount === multipleCount &&
@@ -128,6 +136,13 @@ export class QuizzesService {
           singleCount,
           multipleCount,
           requestId,
+          ...(review
+            ? {
+                reviewTopicKey: review.topicKey,
+                reviewTopicLabel: review.topicLabel,
+                reviewEvidenceChunkIds: review.evidenceChunkIds,
+              }
+            : {}),
           modelSnapshot: sealRuntimeModels(this.config),
           credential: sealQaCredential(this.config.getOrThrow("JWT_SECRET"), apiKey),
         },
@@ -211,6 +226,7 @@ export class QuizzesService {
     for (const row of (await this.store.list("quizzes", { userId, knowledgeBaseId })).sort(
       (a, b) => b.id - a.id,
     )) {
+      if (row.reviewTopicKey) continue;
       try {
         items.push(await this.present(row, userId, this.store, false));
       } catch (error) {
@@ -220,7 +236,9 @@ export class QuizzesService {
     return {
       items,
       generationTasks: this.tasks
-        ? (await this.tasks.list(userId, knowledgeBaseId)).filter((t) => t.kind === "quiz")
+        ? (await this.tasks.list(userId, knowledgeBaseId)).filter(
+            (t) => t.kind === "quiz" && !("quizPurpose" in t),
+          )
         : [],
     };
   }
@@ -267,8 +285,8 @@ export class QuizzesService {
   async progress(id: number, userId: number, input: ProgressInput) {
     const initial = await this.store.get("quizAttempts", id);
     if (!initial || initial.userId !== userId) throw new ApiError(404, "练习记录不存在");
+    const quiz = await this.owned(initial.quizId, userId);
     await this.store.transaction(async (tx) => {
-      const quiz = await this.owned(initial.quizId, userId, tx);
       await this.source(quiz, userId, tx, true);
       const currentQuiz = await tx.lock("quizzes", quiz.id);
       const row = await tx.lock("quizAttempts", id);
@@ -284,30 +302,8 @@ export class QuizzesService {
       if (input.questionId !== undefined) {
         const q: QuizQuestion = quiz.questions.find((q: QuizQuestion) => q.id === input.questionId);
         if (!q) throw new ApiError(400, "题目不存在");
-        if (
-          answers[q.id]?.submitted &&
-          input.selectedOptionIds !== undefined &&
-          !sameOptions(input.selectedOptionIds, answers[q.id].selectedOptionIds)
-        )
-          throw new ApiError(409, "已提交答案不可更改");
-        if (!answers[q.id]?.submitted) {
-          const selection = input.selectedOptionIds ?? answers[q.id]?.selectedOptionIds ?? [];
-          if (
-            !Array.isArray(selection) ||
-            selection.some((id) => !OPTION_IDS.includes(id)) ||
-            new Set(selection).size !== selection.length ||
-            selection.length > (q.type === "SINGLE" ? 1 : 4)
-          )
-            throw new ApiError(400, "选项无效");
-          if (input.submit && selection.length < 1) throw new ApiError(400, "请选择有效答案后提交");
-          answers[q.id] = {
-            selectedOptionIds: [...selection].sort(),
-            submitted: !!input.submit,
-            ...(input.submit
-              ? { isCorrect: sameOptions(selection, q.correctOptionIds), submittedAt: now() }
-              : {}),
-          };
-        }
+        const submission = updateQuizAnswer(answers, q, input);
+        if (submission) await recordWrongQuestion(tx, currentQuiz, q, submission);
       } else if (input.selectedOptionIds !== undefined || input.submit)
         throw new ApiError(400, "缺少题目标识");
       const stats = scoreAnswers(quiz.questions, answers);
@@ -331,6 +327,7 @@ export class QuizzesService {
       if (!row || row.userId !== userId) throw new ApiError(404, "测验不存在");
       for (const a of await tx.list("quizAttempts", { quizId: id }))
         await tx.delete("quizAttempts", a.id);
+      await clearQuizReviews(tx, row);
       await tx.delete("quizzes", id);
     });
     return { deleted: true };

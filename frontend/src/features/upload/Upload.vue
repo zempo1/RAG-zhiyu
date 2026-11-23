@@ -255,7 +255,11 @@
             <div v-for="task in tasks.slice(0, 12)" :key="task.id" class="task-row">
               <div>
                 <strong
-                  >{{ kindLabels[task.kind] || task.kind }}
+                  >{{
+                    task.quizPurpose === "review_variant"
+                      ? "变式练习"
+                      : kindLabels[task.kind] || task.kind
+                  }}
                   <span class="muted">#{{ task.id }}</span></strong
                 ><span class="task-stage"
                   >{{ task.waitingReason || stageLabels[task.stage] || task.stage }}
@@ -457,11 +461,13 @@ const stageLabels: Record<string, string> = {
   retrieving: "检索资料中",
   reading: "读取文档",
   validating: "校验生成结果",
+  classifying: "整理错题知识点",
   generating: "生成回答中",
   superseded: "已有更新版本",
 };
 const kindLabels: Record<string, string> = {
   quiz: "智能测验",
+  quiz_review_classification: "错题知识点归类",
   qa: "后台问答",
   index: "文档索引",
   rebuild: "全库重建",

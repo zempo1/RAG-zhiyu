@@ -1,7 +1,12 @@
 .flashcard-overlay {
   position: fixed;
   inset: 0;
-  background: linear-gradient(135deg, #0f0c1a 0%, #1a1025 50%, #0f172a 100%);
+  background: linear-gradient(
+    135deg,
+    light-dark(#f4f7fc, #0f0c1a) 0%,
+    light-dark(#f0edfa, #1a1025) 50%,
+    light-dark(#edf5fc, #0f172a) 100%
+  );
   z-index: 2000;
   display: flex;
   flex-direction: column;
@@ -11,8 +16,8 @@
 /* 顶部 */
 .fc-header {
   height: 68px;
-  background: rgba(255, 255, 255, 0.04);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: light-dark(rgba(51, 85, 126, 0.045), rgba(255, 255, 255, 0.04));
+  border-bottom: 1px solid light-dark(#dce4ee, rgba(255, 255, 255, 0.08));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -30,28 +35,28 @@
   gap: 10px;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #e2e8f0;
+  color: light-dark(#255b8c, #e2e8f0);
 }
 .fc-icon {
   font-size: 1.4rem;
 }
 .fc-progress {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: light-dark(#354052, rgba(255, 255, 255, 0.4));
   font-weight: 500;
 }
 .fc-close {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.5);
+  background: light-dark(rgba(51, 85, 126, 0.06), rgba(255, 255, 255, 0.06));
+  border: 1px solid light-dark(#dce4ee, rgba(255, 255, 255, 0.1));
+  color: light-dark(#354052, rgba(255, 255, 255, 0.5));
   padding: 8px 20px;
   border-radius: 10px;
   cursor: pointer;
   font-size: 0.85rem;
   transition: all 0.2s;
   &:hover {
-    background: rgba(255, 255, 255, 0.12);
-    color: #fff;
+    background: light-dark(rgba(51, 85, 126, 0.12), rgba(255, 255, 255, 0.12));
+    color: light-dark(#15171b, #fff);
   }
 }
 
@@ -67,7 +72,7 @@
   overflow: hidden;
 }
 .fc-empty {
-  color: rgba(255, 255, 255, 0.4);
+  color: light-dark(#354052, rgba(255, 255, 255, 0.4));
   font-size: 1rem;
 }
 
@@ -76,14 +81,14 @@
   width: 100%;
   max-width: 680px;
   height: 4px;
-  background: rgba(255, 255, 255, 0.08);
+  background: light-dark(rgba(51, 85, 126, 0.08), rgba(255, 255, 255, 0.08));
   border-radius: 2px;
   overflow: hidden;
 }
 .fc-progress-fill {
   height: 100%;
   border-radius: 2px;
-  background: linear-gradient(90deg, #7c3aed, #06b6d4);
+  background: linear-gradient(90deg, light-dark(#365dcc, #7c3aed), #06b6d4);
   transition: width 0.4s ease;
 }
 
@@ -121,17 +126,17 @@
 }
 .fc-card-front {
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(124, 58, 237, 0.05));
-  border: 1px solid rgba(124, 58, 237, 0.35);
+  border: 1px solid light-dark(#6a53bc, rgba(124, 58, 237, 0.35));
   box-shadow:
     0 20px 60px rgba(124, 58, 237, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    inset 0 1px 0 light-dark(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.06));
 }
 .fc-card-back {
   background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(6, 182, 212, 0.04));
-  border: 1px solid rgba(6, 182, 212, 0.3);
+  border: 1px solid light-dark(#9ebbd4, rgba(6, 182, 212, 0.3));
   box-shadow:
     0 20px 60px rgba(6, 182, 212, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    inset 0 1px 0 light-dark(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.06));
   transform: rotateY(180deg);
 }
 .fc-card-label {
@@ -142,33 +147,33 @@
   border-radius: 20px;
   text-transform: uppercase;
   .fc-card-front & {
-    color: #7c3aed;
+    color: light-dark(#4a3b6d, #7c3aed);
     background: rgba(124, 58, 237, 0.15);
   }
   .fc-card-back & {
-    color: #06b6d4;
+    color: light-dark(#255b8c, #06b6d4);
     background: rgba(6, 182, 212, 0.15);
   }
 }
 .fc-card-front .fc-card-label {
-  color: #a78bfa;
+  color: light-dark(#51408a, #a78bfa);
   background: rgba(124, 58, 237, 0.15);
 }
 .fc-card-back .fc-card-label {
-  color: #22d3ee;
+  color: light-dark(#255b8c, #22d3ee);
   background: rgba(6, 182, 212, 0.15);
 }
 .fc-card-text {
   font-size: 1.15rem;
   font-weight: 600;
-  color: #f1f5f9;
+  color: light-dark(#255b8c, #f1f5f9);
   line-height: 1.65;
   max-height: 180px;
   overflow-y: auto;
 }
 .fc-card-hint {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.2);
+  color: light-dark(#354052, rgba(255, 255, 255, 0.2));
   margin-top: auto;
 }
 
@@ -185,12 +190,12 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.7);
+  background: light-dark(rgba(51, 85, 126, 0.06), rgba(255, 255, 255, 0.06));
+  border: 1px solid light-dark(#dce4ee, rgba(255, 255, 255, 0.12));
+  color: light-dark(#354052, rgba(255, 255, 255, 0.7));
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.12);
-    color: #fff;
+    background: light-dark(rgba(51, 85, 126, 0.12), rgba(255, 255, 255, 0.12));
+    color: light-dark(#15171b, #fff);
   }
   &:disabled {
     opacity: 0.3;
@@ -199,8 +204,8 @@
 }
 .fc-btn-next {
   background: rgba(124, 58, 237, 0.2);
-  border-color: rgba(124, 58, 237, 0.4);
-  color: #a78bfa;
+  border-color: light-dark(#6a53bc, rgba(124, 58, 237, 0.4));
+  color: light-dark(#51408a, #a78bfa);
   &:hover:not(:disabled) {
     background: rgba(124, 58, 237, 0.35);
   }
@@ -216,14 +221,14 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
+  background: light-dark(rgba(51, 85, 126, 0.15), rgba(255, 255, 255, 0.15));
   cursor: pointer;
   transition: all 0.2s;
   &.answered {
     background: rgba(124, 58, 237, 0.5);
   }
   &.active {
-    background: #7c3aed;
+    background: light-dark(#365dcc, #7c3aed);
     transform: scale(1.4);
   }
 }
@@ -239,7 +244,7 @@
 }
 .fc-stats {
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: light-dark(#354052, rgba(255, 255, 255, 0.4));
 }
 .fc-action {
   padding: 8px 16px;
@@ -250,18 +255,18 @@
   transition: all 0.2s;
   border: 1px solid;
   &-reset {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.5);
+    background: light-dark(rgba(51, 85, 126, 0.045), rgba(255, 255, 255, 0.04));
+    border-color: light-dark(#dce4ee, rgba(255, 255, 255, 0.1));
+    color: light-dark(#354052, rgba(255, 255, 255, 0.5));
     &:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
+      background: light-dark(rgba(51, 85, 126, 0.1), rgba(255, 255, 255, 0.1));
+      color: light-dark(#15171b, #fff);
     }
   }
   &-export {
     background: rgba(59, 130, 246, 0.1);
-    border-color: rgba(59, 130, 246, 0.3);
-    color: #60a5fa;
+    border-color: light-dark(#377caa, rgba(59, 130, 246, 0.3));
+    color: light-dark(#255b8c, #60a5fa);
     &:hover {
       background: rgba(59, 130, 246, 0.2);
     }
