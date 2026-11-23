@@ -1,12 +1,13 @@
 import PDFDocument from "pdfkit";
 import { pipeline } from "./helpers/pipeline";
-import { RetrievalService } from "../src/modules/rag/retrieval.service";
+import { RetrievalService } from "../src/modules/rag/retrieval/retrieval.service";
 import { HistoryService } from "../src/modules/history/history.service";
-import { normalizeCitations } from "../src/modules/rag/citations";
-import { DocumentOriginalsService } from "../src/modules/documents/document-originals.service";
+import { normalizeCitations } from "../src/modules/rag/citations/citations";
+import { DocumentOriginalsService } from "../src/modules/documents/originals/document-originals.service";
 import { AgentService } from "../src/modules/agent/agent.service";
 import { ChatService } from "../src/modules/chat/chat.service";
 import { ChatController } from "../src/modules/chat/chat.controller";
+import { ChatWorkflowService } from "../src/modules/chat/chat-workflow.service";
 import { agentLlmFixture } from "./helpers/agent-llm.fixture";
 import { EventEmitter } from "node:events";
 
@@ -97,7 +98,7 @@ it("streams real retrieved PDF anchors and saves the same citation in chat histo
     });
     const agent = new AgentService(retrieval, llm as any, {} as any, p.config, p.store);
     const history = new HistoryService(p.store, p.libraries);
-    const controller = new ChatController(new ChatService(agent, llm as any), history, {
+    const workflow = new ChatWorkflowService(new ChatService(agent, llm as any), history, {
       lookup: async () => null,
     } as any);
     const response: any = new EventEmitter();
@@ -112,7 +113,7 @@ it("streams real retrieved PDF anchors and saves the same citation in chat histo
     response.end = () => {
       response.writableEnded = true;
     };
-    await controller.stream(
+    await new ChatController(workflow).stream(
       { question: "Evidence", knowledgeBaseId: uploaded.knowledgeBaseId },
       1,
       undefined,

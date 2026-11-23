@@ -2,7 +2,7 @@ import { jest } from "@jest/globals";
 import { pipeline } from "./helpers/pipeline";
 import { RagService } from "../src/modules/rag/rag.service";
 import { SummaryService } from "../src/modules/rag/summary.service";
-import { RetrievalRunsController } from "../src/modules/rag/retrieval-runs.controller";
+import { RetrievalRunsService } from "../src/modules/rag/retrieval-runs/retrieval-runs.service";
 import { ApiError } from "../src/common/api-error";
 
 const tokenizer = { count: async (text: string) => Array.from(text).length };
@@ -133,16 +133,21 @@ it("scopes both retrieval channels and expands parent metadata, including exact 
     expect(result.sources.length).toBeGreaterThan(0);
     expect(result.sources.every((s) => s.documentId === a.documentId)).toBe(true);
     expect(result.diagnostics.candidates.lexical.length).toBeGreaterThan(0);
-    const controller = new RetrievalRunsController(
-      p.store,
-      configuration({ DB_TIMEZONE: "+08:00" }) as any,
-    );
-    await expect(controller.get(2, result.diagnostics.runId)).rejects.toMatchObject({
+    const runs = new RetrievalRunsService(p.store, configuration({ DB_TIMEZONE: "+08:00" }) as any);
+    await expect(runs.get(2, result.diagnostics.runId)).rejects.toMatchObject({
       status: 404,
     });
-    expect(
-      (await controller.get(1, result.diagnostics.runId)).finalEvidence.length,
-    ).toBeGreaterThan(0);
+    expect((await runs.get(1, result.diagnostics.runId)).finalEvidence.length).toBeGreaterThan(0);
+    const expired = await p.store.save("retrievalRuns", {
+      userId: 1,
+      knowledgeBaseId: a.knowledgeBaseId,
+      createdAt: "2000-01-01 00:00:00",
+      payload: {},
+    });
+    await expect(runs.get(1, expired.id)).rejects.toMatchObject({ status: 404 });
+    await runs.purge();
+    expect(await p.store.get("retrievalRuns", expired.id)).toBeUndefined();
+    expect(await p.store.get("retrievalRuns", result.diagnostics.runId)).toBeDefined();
   } finally {
     await p.cleanup();
   }

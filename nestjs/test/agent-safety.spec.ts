@@ -1,6 +1,6 @@
 import { AgentService } from "../src/modules/agent/agent.service";
-import { AgentBudget } from "../src/modules/agent/agent-budget";
-import { RetrievalService } from "../src/modules/rag/retrieval.service";
+import { AgentBudget } from "../src/modules/agent/graph/agent-budget";
+import { RetrievalService } from "../src/modules/rag/retrieval/retrieval.service";
 import { jest } from "@jest/globals";
 
 const scope = {

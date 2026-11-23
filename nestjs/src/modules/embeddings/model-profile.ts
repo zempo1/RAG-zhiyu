@@ -8,7 +8,7 @@ import {
   modelBinding,
   ModelProvider,
   normalizedModelUrl,
-} from "../model-settings/model-runtime";
+} from "../model-settings/runtime/model-runtime";
 import { ApiError } from "../../common/api-error";
 
 export interface ModelProfile {

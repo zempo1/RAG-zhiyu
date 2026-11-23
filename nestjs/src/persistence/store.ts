@@ -9,7 +9,7 @@ export interface EntityMap {
   quizWrongItems: import("../modules/quizzes/entities/quiz-review.entity").QuizWrongItem;
   quizReviewPractices: import("../modules/quizzes/entities/quiz-review.entity").QuizReviewPractice;
   quizReviewCategories: import("../modules/quizzes/entities/quiz-review.entity").QuizReviewCategory;
-  modelSettings: import("../modules/model-settings/model-setting.entity").ModelSetting;
+  modelSettings: import("../modules/model-settings/entities/model-setting.entity").ModelSetting;
   agentCheckpoints: import("./agent-checkpoint.persistence").AgentCheckpoint;
   agentCheckpointWrites: import("./agent-checkpoint.persistence").AgentCheckpointWrite;
   retrievalRuns: import("./quality.persistence").RetrievalRun;
@@ -45,6 +45,8 @@ export abstract class Store {
 
   abstract delete(table: Table, id: number): Promise<void>;
 
+  abstract deleteExpiredRetrievalRuns(cutoff: Date, timezone: string): Promise<void>;
+
   abstract deleteAgentThread(threadId: string): Promise<void>;
 
   abstract transaction<T>(work: (store: Store) => Promise<T>): Promise<T>;
@@ -56,14 +58,20 @@ export abstract class Store {
   ): Promise<T>;
 }
 
-export const now = () => {
-  const zone = process.env.DB_TIMEZONE || "+08:00";
+export const now = () => formatStoreTime(new Date(), process.env.DB_TIMEZONE || "+08:00");
+
+export function formatStoreTime(date: Date, zone: string): string {
   const match = /^([+-])(\d\d):(\d\d)$/.exec(zone);
   const minutes = match
     ? (Number(match[2]) * 60 + Number(match[3])) * (match[1] === "+" ? 1 : -1)
     : 0;
-  return new Date(Date.now() + minutes * 60000).toISOString().slice(0, 23);
-};
+  return new Date(date.getTime() + minutes * 60000).toISOString().slice(0, 23);
+}
+
+export function parseStoreTime(value: unknown, zone: string): number {
+  const text = String(value).replace(" ", "T");
+  return Date.parse(/[zZ]$|[+-]\d\d:\d\d$/.test(text) ? text : text + zone);
+}
 
 export function publicRow(row: Row): Record<string, unknown> {
   const { userId, password, chatId, ...result } = row;

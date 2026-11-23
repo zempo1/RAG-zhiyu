@@ -1,4 +1,4 @@
-import { VisionScheduler } from "../src/modules/documents/parsers/vision-scheduler";
+import { VisionScheduler } from "../src/modules/documents/parsers/pdf/vision/vision-scheduler";
 it("honors cooldown and aborts queued requests without leaking capacity", async () => {
   const pool = new VisionScheduler(1),
     release = await pool.acquire();

@@ -4,8 +4,8 @@ import { ConfigService } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { configureApp } from "../src/bootstrap";
-import { currentModels, modelBinding } from "../src/modules/model-settings/model-runtime";
-import { TaskQueueRuntime } from "../src/modules/tasks/task-queue.runtime";
+import { currentModels, modelBinding } from "../src/modules/model-settings/runtime/model-runtime";
+import { TaskQueueRuntime } from "../src/modules/tasks/queue/task-queue.runtime";
 import { Store } from "../src/persistence/store";
 
 @Controller("api/model-probe")

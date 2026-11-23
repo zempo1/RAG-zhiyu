@@ -1,14 +1,14 @@
 import { ConfigService } from "@nestjs/config";
 import { MemoryStore } from "../src/persistence/memory.store";
 import { TokenizerService } from "../src/modules/embeddings/tokenizer.service";
-import { QuizRunner, selectQuizSources } from "../src/modules/quizzes/quiz-runner";
+import { QuizRunner, selectQuizSources } from "../src/modules/quizzes/generation/quiz-runner";
 import {
   sealRuntimeModels,
   runWithModels,
   environmentBindings,
   modelBinding,
-} from "../src/modules/model-settings/model-runtime";
-import { sealQaCredential } from "../src/modules/tasks/qa-credentials";
+} from "../src/modules/model-settings/runtime/model-runtime";
+import { sealQaCredential } from "../src/modules/tasks/qa/qa-credentials";
 import { ModelOutputError } from "../src/modules/llm/llm.types";
 const q = (type: string, stem: string) => ({
   type,

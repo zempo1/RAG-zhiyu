@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 import { jest } from "@jest/globals";
 import { ConfigService } from "@nestjs/config";
 import { LlmService } from "../src/modules/llm/llm.service";
-import { AgentBudget } from "../src/modules/agent/agent-budget";
+import { AgentBudget } from "../src/modules/agent/graph/agent-budget";
 
 describe("stream recovery through the real SDK and controlled local transport", () => {
   let server: Server, url: string, llm: LlmService;

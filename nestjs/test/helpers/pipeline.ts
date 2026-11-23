@@ -7,7 +7,7 @@ import { MemoryStore } from "../../src/persistence/memory.store";
 import { KnowledgeBasesService } from "../../src/modules/knowledge-bases/knowledge-bases.service";
 import { TasksService } from "../../src/modules/tasks/tasks.service";
 import { DocumentsService } from "../../src/modules/documents/documents.service";
-import { IndexingService } from "../../src/modules/documents/indexing.service";
+import { IndexingService } from "../../src/modules/documents/indexing/indexing.service";
 import { DocumentParser } from "../../src/modules/documents/parsers/document.parser";
 import { RecursiveChunker } from "../../src/modules/documents/chunkers/recursive.chunker";
 import { InMemoryVectorStore } from "../../src/modules/vector-store/in-memory-vector-store.service";

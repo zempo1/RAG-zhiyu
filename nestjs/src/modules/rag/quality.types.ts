@@ -1,4 +1,4 @@
-import { Citation } from "./citations";
+import { Citation } from "./citations/citations";
 export type QueryMode = "auto" | "general" | "search" | "overview" | "compare";
 export interface HistoryTurn {
   role: string;

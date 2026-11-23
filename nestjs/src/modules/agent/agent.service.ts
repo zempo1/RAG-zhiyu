@@ -1,25 +1,28 @@
-import { AgentTools, definitions } from "./agent-tools";
+import { AgentTools, definitions } from "./tools/agent-tools";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { modelBinding } from "../model-settings/model-runtime";
-import { withoutSourceGeometry } from "../documents/parsers/source-anchors";
-import { RetrievalService } from "../rag/retrieval.service";
+import { modelBinding } from "../model-settings/runtime/model-runtime";
+import { withoutSourceGeometry } from "../documents/parsers/pdf/layout/source-anchors";
+import { RetrievalService } from "../rag/retrieval/retrieval.service";
 import { SummaryService } from "../rag/summary.service";
 import { LlmService } from "../llm/llm.service";
 import { ToolCall } from "../llm/llm.types";
 import { Row, Store, now } from "../../persistence/store";
-import { ApiError } from "../../common/api-error";
-import { matchQuizQuote, type QuizQuestion } from "../quizzes/quiz-data";
+import { loadQuizEvidence, overviewCovered } from "./evidence/agent-evidence";
 import { Command, MemorySaver } from "@langchain/langgraph";
-import { normalizeCitations, NO_CONTEXT_ANSWER } from "../rag/citations";
-import { AgentBudget, AgentLimitError } from "./agent-budget";
+import { normalizeCitations, NO_CONTEXT_ANSWER } from "../rag/citations/citations";
+import { AgentBudget, AgentLimitError } from "./graph/agent-budget";
 import { AgentOptions, AgentSnapshot, PublicStep } from "./agent.types";
-import { verifiedSummaryResult } from "./agent-summary-result";
-import { compactSearchEvidence } from "./search-evidence";
-import { documentQuestionScope } from "./document-intent";
-import { AgentExecutionRevoked, agentThreadId, withAgentGraphOwner } from "./agent-graph-owner";
-import { AgentGraphRun } from "./agent-graph-run";
-import { MysqlAgentCheckpointer } from "./mysql-agent-checkpointer";
+import { verifiedSummaryResult } from "./evidence/agent-summary-result";
+import { compactSearchEvidence } from "./evidence/search-evidence";
+import { documentQuestionScope } from "./graph/document-intent";
+import {
+  AgentExecutionRevoked,
+  agentThreadId,
+  withAgentGraphOwner,
+} from "./checkpoint/agent-graph-owner";
+import { AgentGraphRun } from "./graph/agent-graph-run";
+import { MysqlAgentCheckpointer } from "./checkpoint/mysql-agent-checkpointer";
 import {
   AgentGraphState,
   compileAgentGraph,
@@ -28,7 +31,7 @@ import {
   isAgentDestination,
   isAgentHandoff,
   runDurableTools,
-} from "./agent.graph";
+} from "./graph/agent.graph";
 
 const parse = (text: string) => JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, ""));
 
@@ -251,7 +254,7 @@ export class AgentService {
       if (named.length) scope.documents = named;
     }
     const evidence = options.quizContext
-      ? await this.loadQuizEvidence(scope, options.quizContext)
+      ? await loadQuizEvidence(this.store, this.retrieval, scope, options.quizContext)
       : [];
     const initialized =
       owner &&
@@ -307,66 +310,6 @@ export class AgentService {
       mode: options.mode,
     };
     return this.runGraph(s, options, initialized?.payload);
-  }
-  private async loadQuizEvidence(
-    scope: AgentSnapshot["scope"],
-    input: NonNullable<AgentOptions["quizContext"]>,
-  ) {
-    const attempt = await this.store.get("quizAttempts", input.attemptId);
-    const quiz = attempt && (await this.store.get("quizzes", attempt.quizId));
-    if (attempt?.userId !== scope.userId || quiz?.userId !== scope.userId)
-      throw new ApiError(404, "测验练习不存在");
-    const [source] = scope.documents;
-    if (
-      quiz.knowledgeBaseId !== scope.knowledgeBaseId ||
-      scope.documents.length !== 1 ||
-      source?.documentId !== quiz.documentId
-    )
-      throw new ApiError(409, "测验来源与检索范围不一致");
-    const doc = await this.store.get("documents", quiz.documentId);
-    if (
-      !doc ||
-      doc.deletedAt ||
-      doc.userId !== scope.userId ||
-      doc.knowledgeBaseId !== scope.knowledgeBaseId ||
-      doc.activeVersionId !== quiz.versionId ||
-      doc.activeIndexRevisionId !== quiz.indexRevisionId ||
-      source.indexRevisionId !== quiz.indexRevisionId
-    )
-      throw new ApiError(409, "测验来源已更新或删除");
-    const question = (quiz.questions as QuizQuestion[]).find((q) => q.id === input.questionId);
-    if (!question || !attempt.answers?.[question.id]?.submitted)
-      throw new ApiError(409, "请先提交本题");
-    const evidence = new Map<number, AgentSnapshot["evidence"][number]>();
-    for (const { chunkId, quote } of question.evidence ?? []) {
-      if (evidence.has(chunkId)) continue;
-      const chunk = await this.store.get("chunks", chunkId);
-      if (
-        !chunk ||
-        chunk.documentId !== doc.id ||
-        chunk.versionId !== quiz.versionId ||
-        chunk.indexRevisionId !== quiz.indexRevisionId ||
-        typeof quote !== "string" ||
-        !matchQuizQuote(chunk.text, quote)
-      )
-        continue;
-      evidence.set(
-        chunkId,
-        this.retrieval.original({
-          number: 0,
-          documentId: doc.id,
-          knowledgeBaseId: scope.knowledgeBaseId,
-          versionId: chunk.versionId,
-          indexRevisionId: chunk.indexRevisionId,
-          chunkId,
-          filename: source.filename,
-          text: chunk.text,
-          location: chunk.location || null,
-          score: 1,
-        }),
-      );
-    }
-    return [...evidence.values()];
   }
   async resume(snapshot: AgentSnapshot, options: AgentOptions = {}) {
     return this.runGraph(structuredClone(snapshot), { ...options, background: true });
@@ -966,61 +909,6 @@ export class AgentService {
     }
     return session;
   }
-  /** Context packing is not proof that the complete target corpus has been read. */
-  private async overviewCovered(
-    state: AgentSnapshot,
-    sources: typeof state.evidence,
-    options: AgentOptions,
-  ) {
-    const session = await this.session(state, options);
-    return (
-      state.scope.documents.length > 0 &&
-      state.scope.documents.every((doc) => {
-        const chunks = (session.chunks || []).filter((c: any) => c.documentId === doc.documentId);
-        return (
-          chunks.length > 0 &&
-          chunks.every((chunk: any) => {
-            const matches = sources.filter(
-              (source) =>
-                source.documentId === doc.documentId &&
-                source.indexRevisionId === doc.indexRevisionId &&
-                (source.chunkId === chunk.id || source.chunkIds?.includes(chunk.id)),
-            );
-            if (!chunk.location) return matches.some((source) => source.text === chunk.text);
-            let covered = chunk.location.start;
-            const ranges = matches.flatMap((source) =>
-              source.sourceSegments
-                ? source.sourceSegments
-                    .filter((part) => part.chunkIds.includes(chunk.id))
-                    .map((part) => part.location)
-                : source.location
-                  ? [source.location]
-                  : [],
-            );
-            for (const range of ranges.sort((a, b) => a.start - b.start)) {
-              if (
-                range.start > covered &&
-                (typeof chunk.text !== "string" ||
-                  /\S/.test(
-                    chunk.text.slice(
-                      Math.max(0, covered - chunk.location.start),
-                      range.start - chunk.location.start,
-                    ),
-                  ))
-              )
-                break;
-              covered = Math.max(covered, range.end);
-            }
-            return (
-              covered >= chunk.location.end ||
-              (typeof chunk.text === "string" &&
-                !/\S/.test(chunk.text.slice(Math.max(0, covered - chunk.location.start))))
-            );
-          })
-        );
-      })
-    );
-  }
   private tool(call: ToolCall, state: AgentSnapshot, options: AgentOptions, session: any) {
     return this.toolset.execute(call, state, options, session);
   }
@@ -1074,7 +962,7 @@ export class AgentService {
       complete = packed.complete,
       summaryPrompt: string | undefined;
     if (this.fullCoverageRequired(s))
-      complete = !!complete && (await this.overviewCovered(s, sources, o));
+      complete = !!complete && (await overviewCovered(s.scope, sources, await this.session(s, o)));
     if (s.phase === "finalize" && this.fullCoverageRequired(s) && !complete) {
       const summaryWindow = s.scope.documents.length === 1 ? this.overviewResponseBudget() : window;
       const result = verifiedSummaryResult(

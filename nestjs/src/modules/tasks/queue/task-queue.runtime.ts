@@ -1,0 +1,244 @@
+/** 以数据库任务为准，将任务 ID 投递到队列并组织消费。 */
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Optional } from "@nestjs/common";
+import { QaTasksService } from "../qa/qa-tasks.service";
+import { QuizzesService } from "../../quizzes/quizzes.service";
+import { MindMapsService } from "../../mindmaps/mindmaps.service";
+import { ConfigService } from "@nestjs/config";
+import { Queue, Worker, UnrecoverableError, DelayedError } from "bullmq";
+import { Store, now } from "../../../persistence/store";
+import { IndexingService } from "../../documents/indexing/indexing.service";
+import { REVIEW_CLASSIFICATION, TasksService, terminalTask } from "../tasks.service";
+import { monitorEventLoopDelay, IntervalHistogram } from "node:perf_hooks";
+
+/** SQL is the outbox and source of truth; Redis only transports task ids. */
+@Injectable()
+export class TaskQueueRuntime implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(TaskQueueRuntime.name);
+  private readonly queues = new Map<string, Queue>();
+  private readonly workers: Worker[] = [];
+  private timer?: NodeJS.Timeout;
+  private busy = false;
+  private stopping = false;
+  private activeDispatch?: Promise<void>;
+  private loopDelay?: IntervalHistogram;
+
+  constructor(
+    private readonly config: ConfigService,
+    private readonly store: Store,
+    private readonly indexing: IndexingService,
+    private readonly tasks: TasksService,
+    @Optional() private readonly qa?: QaTasksService,
+    @Optional() private readonly mindmaps?: MindMapsService,
+    @Optional() private readonly quizzes?: QuizzesService,
+  ) {}
+
+  private consumer(name: string) {
+    switch (name) {
+      case "quiz":
+        return this.quizzes!;
+      case "mindmap":
+        return this.mindmaps!;
+      case "qa":
+        return this.qa!;
+      default:
+        return this.indexing;
+    }
+  }
+
+  private queueName(kind: string) {
+    if (["quiz", "mindmap", "qa"].includes(kind)) return kind;
+    return kind === "index" ? "documents" : "cleanup";
+  }
+
+  onModuleInit() {
+    if (process.env.PROCESS_ROLE === "worker") {
+      this.loopDelay = monitorEventLoopDelay({ resolution: 20 });
+      this.loopDelay.enable();
+    }
+    if (this.config.get("QUEUE_DRIVER") === "bullmq") {
+      for (const name of ["documents", "cleanup", "qa", "mindmap", "quiz"]) {
+        const queue = new Queue(name, {
+          prefix: this.config.get("QUEUE_PREFIX"),
+          connection: this.connection(false),
+        });
+        queue.on("error", () => this.logger.warn("Redis 暂不可用，任务保留在 MySQL 等待补投"));
+        this.queues.set(name, queue);
+        // API 进程负责接收和投递；独立 Worker 进程负责消费，避免每个 API 实例都执行任务。
+        if (process.env.PROCESS_ROLE === "worker") {
+          const worker = new Worker(
+            name,
+            async (job) => {
+              try {
+                const result = await this.consumer(name).process(
+                  job.data.taskId,
+                  job.attemptsMade + 1,
+                  (progress) => job.updateProgress(progress),
+                );
+                // 依赖未就绪属于等待而非失败，延迟再处理，不消耗普通错误重试逻辑。
+                if (result === "waiting") {
+                  await job.moveToDelayed(Date.now() + 2000, job.token);
+                  throw new DelayedError();
+                }
+              } catch (error) {
+                const task = await this.store.get("tasks", job.data.taskId);
+                if (task?.status === "failed" && !task.retryable)
+                  throw new UnrecoverableError(task.error || "文档处理失败");
+                throw error;
+              }
+            },
+            {
+              prefix: this.config.get("QUEUE_PREFIX"),
+              connection: this.connection(true),
+              concurrency:
+                name === "documents"
+                  ? Number(this.config.get("INDEX_DOCUMENT_CONCURRENCY") ?? 2)
+                  : 1,
+            },
+          );
+          worker.on("error", () => this.logger.warn("Worker 等待 Redis 连接恢复"));
+          worker.on("failed", (_job, error) => this.logger.warn("任务失败: " + error.message));
+          worker.on("stalled", (jobId) =>
+            this.logger.warn(
+              JSON.stringify({
+                event: "queue-stalled",
+                queue: name,
+                jobId,
+                eventLoopMaxMs: Math.round((this.loopDelay?.max || 0) / 1e6),
+              }),
+            ),
+          );
+          worker.on("lockRenewalFailed", (jobIds) =>
+            this.logger.warn(
+              JSON.stringify({
+                event: "queue-lock-renewal-failed",
+                queue: name,
+                jobIds,
+                eventLoopMaxMs: Math.round((this.loopDelay?.max || 0) / 1e6),
+              }),
+            ),
+          );
+          this.workers.push(worker);
+        }
+      }
+    }
+    this.timer = setInterval(() => {
+      if (this.busy || this.stopping) return;
+      this.activeDispatch = this.dispatch().catch((error) =>
+        this.logger.warn("任务分发稍后重试: " + error.message),
+      );
+    }, 1000);
+    this.timer.unref();
+  }
+
+  private connection(worker: boolean) {
+    const url = new URL(this.config.getOrThrow<string>("REDIS_URL"));
+    return {
+      host: url.hostname,
+      port: Number(url.port || 6379),
+      username: url.username ? decodeURIComponent(url.username) : undefined,
+      password: url.password ? decodeURIComponent(url.password) : undefined,
+      db: Number(url.pathname.slice(1) || 0),
+      ...(url.protocol === "rediss:" ? { tls: {} } : {}),
+      maxRetriesPerRequest: worker ? null : 1,
+      enableOfflineQueue: worker,
+      connectTimeout: 2000,
+    };
+  }
+
+  async dispatch() {
+    if (this.busy || this.stopping) return;
+    this.busy = true;
+    try {
+      // 每轮从数据库补投未完成任务，因此 Redis 短暂不可用不会丢失业务任务记录。
+      const pending = (await this.store.list("tasks"))
+        .filter(
+          (t) =>
+            t.kind !== "rebuild" &&
+            t.kind !== REVIEW_CLASSIFICATION &&
+            !(
+              t.payload?.engine === "agentic-v1" &&
+              t.payload?.foreground &&
+              t.status === "running" &&
+              t.payload?.leaseUntil > Date.now()
+            ) &&
+            (!terminalTask(t.status) || (t.status === "canceled" && t.executionToken)),
+        )
+        .sort((a, b) => a.id - b.id);
+      for (const task of pending) {
+        if (this.stopping) break;
+        if (task.kind === "index" && task.payload?.indexRetryAfter > Date.now()) continue;
+        const notBefore = task.payload?.notBefore;
+        const delay = notBefore
+          ? Math.max(0, Date.parse(notBefore + "Z") - Date.parse(now() + "Z"))
+          : 0;
+        if (this.config.get("QUEUE_DRIVER") === "memory") {
+          if (delay) continue;
+          try {
+            await this.consumer(this.queueName(task.kind)).process(task.id, task.attempts + 1);
+          } catch {
+            /* Durable task status carries the failure; next tick retries. */
+          }
+        } else {
+          const queue = this.queues.get(this.queueName(task.kind));
+          if (!queue) continue;
+          // 任务 ID 加投递代数构成队列标识，普通补投可去重，手动重试可创建新一代队列任务。
+          const jobId = "task-" + task.id + "-" + task.dispatchGeneration;
+          const existing = await queue.getJob(jobId);
+          if (existing) {
+            const state = await existing.getState();
+            if (!["failed", "completed"].includes(state)) continue;
+            if (task.kind === "index" && task.status === "canceled") {
+              await this.indexing.process(task.id);
+              continue;
+            }
+            if (task.kind === "index") {
+              if (await this.indexing.recoverDelivery(task.id, task.dispatchGeneration))
+                await existing.remove();
+              await this.tasks.refreshParent(task.parentTaskId);
+              continue;
+            }
+            // A crash between SQL completion and Redis ack can leave either side ahead.
+            await existing.remove();
+          }
+          if (!existing && task.kind === "index" && task.status === "running") {
+            await this.indexing.recoverDelivery(task.id, task.dispatchGeneration);
+            await this.tasks.refreshParent(task.parentTaskId);
+            continue;
+          }
+          if (!existing && task.kind === "index" && task.status === "canceled") {
+            await this.indexing.process(task.id);
+            continue;
+          }
+          await queue.add(
+            task.kind,
+            { taskId: task.id },
+            {
+              jobId,
+              attempts: 3,
+              backoff: { type: "exponential", delay: 1000 },
+              delay,
+              removeOnComplete: { count: 1000 },
+              removeOnFail: { count: 1000 },
+            },
+          );
+        }
+      }
+      for (const parent of (await this.store.list("tasks")).filter(
+        (t) => t.kind === "rebuild" && !terminalTask(t.status),
+      ))
+        await this.tasks.refreshParent(parent.id);
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  async onModuleDestroy() {
+    this.loopDelay?.disable();
+    // 关闭时先停分发，再等待正在投递的操作，最后关闭消费者和队列连接。
+    this.stopping = true;
+    if (this.timer) clearInterval(this.timer);
+    await this.activeDispatch;
+    await Promise.all(this.workers.map((worker) => worker.close()));
+    await Promise.all([...this.queues.values()].map((queue) => queue.close()));
+  }
+}

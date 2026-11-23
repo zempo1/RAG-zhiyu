@@ -4,9 +4,10 @@ import { LlmModule } from "../llm/llm.module";
 import { EmbeddingsModule } from "../embeddings/embeddings.module";
 import { TasksModule } from "../tasks/tasks.module";
 import { QuizzesService } from "./quizzes.service";
-import { QuizzesController, QuizAttemptsController } from "./quizzes.controller";
-import { QuizReviewsController } from "./quiz-reviews.controller";
-import { QuizReviewsService } from "./quiz-reviews.service";
+import { QuizzesController } from "./quizzes.controller";
+import { QuizAttemptsController } from "./quiz-attempts.controller";
+import { QuizReviewsController } from "./reviews/quiz-reviews.controller";
+import { QuizReviewsService } from "./reviews/quiz-reviews.service";
 @Module({
   imports: [DocumentsModule, LlmModule, EmbeddingsModule, TasksModule],
   providers: [QuizzesService, QuizReviewsService],

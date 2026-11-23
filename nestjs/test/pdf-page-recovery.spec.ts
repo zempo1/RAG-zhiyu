@@ -1,7 +1,7 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ParsedPageCache, spoolPages } from "../src/modules/documents/parsers/parsed-page-cache";
+import { ParsedPageCache, spoolPages } from "../src/modules/documents/parsers/pdf/cache/parsed-page-cache";
 import { paragraphBlocks } from "../src/modules/documents/parsers/parsed-document";
 import { DocumentParser } from "../src/modules/documents/parsers/document.parser";
 import PDFDocument from "pdfkit";

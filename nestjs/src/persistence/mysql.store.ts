@@ -1,6 +1,6 @@
 import { DataSource, EntityManager } from "typeorm";
 import { createHash } from "node:crypto";
-import { Store, Table, Row, LatestRows, now } from "./store";
+import { Store, Table, Row, LatestRows, now, formatStoreTime } from "./store";
 import { entityTargets } from "./data-source";
 import { ApiError } from "../common/api-error";
 
@@ -143,6 +143,35 @@ export class MysqlStore extends Store {
 
   async delete(table: Table, id: number): Promise<void> {
     await this.query(`DELETE FROM ${this.name(table)} WHERE id = ?`, [id]);
+  }
+
+  async deleteExpiredRetrievalRuns(cutoff: Date, timezone: string): Promise<void> {
+    const table = this.name("retrievalRuns");
+    const createdAt = this.column("retrievalRuns", "createdAt");
+    const deadline = formatStoreTime(cutoff, timezone);
+    const batchSize = 500;
+    const [latest] = await this.query(`SELECT id FROM ${table} ORDER BY id DESC LIMIT 1`);
+    if (!latest) return;
+
+    // Page through the primary key so cleanup holds write locks for only one batch.
+    let cursor: number | string = 0;
+    while (true) {
+      const rows: { id: number | string; expired: number | string }[] = await this.query(
+        `SELECT id, ${createdAt} < ? AS expired FROM ${table} ` +
+          "WHERE id > ? AND id <= ? ORDER BY id LIMIT ?",
+        [deadline, cursor, latest.id, batchSize],
+      );
+      const expired = rows.filter((row) => Number(row.expired) === 1).map((row) => row.id);
+      if (expired.length) {
+        const placeholders = expired.map(() => "?").join(", ");
+        await this.query(
+          `DELETE FROM ${table} WHERE id IN (${placeholders}) AND ${createdAt} < ?`,
+          [...expired, deadline],
+        );
+      }
+      if (rows.length < batchSize) return;
+      cursor = rows[rows.length - 1].id;
+    }
   }
 
   async deleteAgentThread(threadId: string): Promise<void> {

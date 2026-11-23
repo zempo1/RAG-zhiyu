@@ -1,5 +1,5 @@
-import { compactSearchEvidence } from "../src/modules/agent/search-evidence";
-import type { OriginalEvidence } from "../src/modules/rag/retrieval.types";
+import { compactSearchEvidence } from "../src/modules/agent/evidence/search-evidence";
+import type { OriginalEvidence } from "../src/modules/rag/retrieval/retrieval.types";
 
 const first: OriginalEvidence = {
   evidenceId: "a",

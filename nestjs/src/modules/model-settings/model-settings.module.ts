@@ -2,7 +2,7 @@ import { Global, Module } from "@nestjs/common";
 import { APP_INTERCEPTOR } from "@nestjs/core";
 import { ModelSettingsController } from "./model-settings.controller";
 import { ModelSettingsService } from "./model-settings.service";
-import { ModelContextInterceptor } from "./model-context.interceptor";
+import { ModelContextInterceptor } from "./runtime/model-context.interceptor";
 
 @Global()
 @Module({

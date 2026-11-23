@@ -2,7 +2,7 @@ import {
   assembleMindMap,
   catalogNotes,
   parseOrganization,
-} from "../src/modules/mindmaps/mindmap-assembly";
+} from "../src/modules/mindmaps/generation/mindmap-assembly";
 
 const source = [
   {

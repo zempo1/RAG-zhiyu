@@ -1,9 +1,9 @@
 import { join } from "node:path";
-import { IndexingService } from "../src/modules/documents/indexing.service";
+import { IndexingService } from "../src/modules/documents/indexing/indexing.service";
 import { RecursiveChunker } from "../src/modules/documents/chunkers/recursive.chunker";
-import { PageAssetsService } from "../src/modules/documents/page-assets.service";
+import { PageAssetsService } from "../src/modules/documents/originals/page-assets.service";
 import { paragraphBlocks, ParsedDocument } from "../src/modules/documents/parsers/parsed-document";
-import type { ParseContext } from "../src/modules/documents/parsers/pdf-visual.service";
+import type { ParseContext } from "../src/modules/documents/parsers/pdf/vision/pdf-visual.service";
 import { TokenizerService } from "../src/modules/embeddings/tokenizer.service";
 import { currentModelProfile } from "../src/modules/embeddings/model-profile";
 import { pipeline } from "./helpers/pipeline";

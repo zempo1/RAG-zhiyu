@@ -3,15 +3,15 @@ import {
   shiftSourceLocation,
   mergeSourceLocations,
   withoutSourceGeometry,
-} from "../src/modules/documents/parsers/source-anchors";
+} from "../src/modules/documents/parsers/pdf/layout/source-anchors";
 import { RecursiveChunker } from "../src/modules/documents/chunkers/recursive.chunker";
-import { compactSearchEvidence } from "../src/modules/agent/search-evidence";
+import { compactSearchEvidence } from "../src/modules/agent/evidence/search-evidence";
 import { ConfigService } from "@nestjs/config";
 import { TokenizerService } from "../src/modules/embeddings/tokenizer.service";
 import { legacyModelProfile } from "../src/modules/embeddings/model-profile";
 import { AgentService } from "../src/modules/agent/agent.service";
-import { AgentBudget } from "../src/modules/agent/agent-budget";
-import { AgentTools } from "../src/modules/agent/agent-tools";
+import { AgentBudget } from "../src/modules/agent/graph/agent-budget";
+import { AgentTools } from "../src/modules/agent/tools/agent-tools";
 import { QdrantVectorStore } from "../src/modules/vector-store/qdrant-vector-store.service";
 
 const location: any = {

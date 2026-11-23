@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { AgentService } from "../src/modules/agent/agent.service";
-import { AgentBudget } from "../src/modules/agent/agent-budget";
+import { AgentBudget } from "../src/modules/agent/graph/agent-budget";
 
 describe("AgentService", () => {
   const scope = {

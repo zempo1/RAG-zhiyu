@@ -3,11 +3,11 @@ import { ConfigService } from "@nestjs/config";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { PdfVisualService } from "../src/modules/documents/parsers/pdf-visual.service";
+import { PdfVisualService } from "../src/modules/documents/parsers/pdf/vision/pdf-visual.service";
 import { DocumentParser } from "../src/modules/documents/parsers/document.parser";
-import { PageAssetsService } from "../src/modules/documents/page-assets.service";
+import { PageAssetsService } from "../src/modules/documents/originals/page-assets.service";
 import { MemoryStore } from "../src/persistence/memory.store";
-import { localRendering } from "../src/modules/documents/parsers/vision-scheduler";
+import { localRendering } from "../src/modules/documents/parsers/pdf/vision/vision-scheduler";
 
 it("overlaps pages, keeps stable offsets and reuses cache across concurrency settings", async () => {
   const doc = new PDFDocument(),

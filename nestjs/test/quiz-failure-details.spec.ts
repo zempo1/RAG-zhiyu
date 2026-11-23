@@ -1,6 +1,6 @@
 import { ConfigService } from "@nestjs/config";
 import { MemoryStore } from "../src/persistence/memory.store";
-import { QuizRunner } from "../src/modules/quizzes/quiz-runner";
+import { QuizRunner } from "../src/modules/quizzes/generation/quiz-runner";
 import { TokenizerService } from "../src/modules/embeddings/tokenizer.service";
 import { ModelOutputError } from "../src/modules/llm/llm.types";
 it("模型输出截断与结构无效分别展示可操作原因", async () => {

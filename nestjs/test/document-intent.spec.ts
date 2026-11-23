@@ -1,4 +1,4 @@
-import { documentQuestionScope } from "../src/modules/agent/document-intent";
+import { documentQuestionScope } from "../src/modules/agent/graph/document-intent";
 
 it.each([
   "假如你是资深前端面试官，总结这份简历写了什么，有什么技术亮点",

@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { ParsedBlock, ParsedDocument } from "../parsers/parsed-document";
 import { TokenizerService } from "../../embeddings/tokenizer.service";
 import { ModelProfile } from "../../embeddings/model-profile";
-import { sliceSourceLocation, mergeSourceLocations } from "../parsers/source-anchors";
+import { sliceSourceLocation, mergeSourceLocations } from "../parsers/pdf/layout/source-anchors";
 
 @Injectable()
 export class RecursiveChunker {

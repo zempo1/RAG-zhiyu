@@ -1,12 +1,12 @@
 import { jest } from "@jest/globals";
 import { SummaryService } from "../src/modules/rag/summary.service";
 import { ModelOutputError } from "../src/modules/llm/llm.types";
-import { AgentLimitError } from "../src/modules/agent/agent-budget";
+import { AgentLimitError } from "../src/modules/agent/graph/agent-budget";
 import { ConfigService } from "@nestjs/config";
 import { MemoryStore } from "../src/persistence/memory.store";
 import { TokenizerService } from "../src/modules/embeddings/tokenizer.service";
 import { ModelSettingsService } from "../src/modules/model-settings/model-settings.service";
-import { modelBinding, runWithModels } from "../src/modules/model-settings/model-runtime";
+import { modelBinding, runWithModels } from "../src/modules/model-settings/runtime/model-runtime";
 describe("agent summary caching", () => {
   it("invalidates a same-name model at a different endpoint but reuses summaries after key rotation", async () => {
     const store = new MemoryStore(),

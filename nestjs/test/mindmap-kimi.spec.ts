@@ -3,9 +3,9 @@ import { AddressInfo } from "node:net";
 import { ConfigService } from "@nestjs/config";
 import { TokenizerService } from "../src/modules/embeddings/tokenizer.service";
 import { LlmService } from "../src/modules/llm/llm.service";
-import { MindMapGenerator, GenerationContext } from "../src/modules/mindmaps/mindmap-generator";
-import { MindMapPlanner } from "../src/modules/mindmaps/mindmap-planner";
-import { environmentBindings, runWithModels } from "../src/modules/model-settings/model-runtime";
+import { MindMapGenerator, GenerationContext } from "../src/modules/mindmaps/generation/mindmap-generator";
+import { MindMapPlanner } from "../src/modules/mindmaps/generation/mindmap-planner";
+import { environmentBindings, runWithModels } from "../src/modules/model-settings/runtime/model-runtime";
 
 describe("mindmap generation through the native DashScope Kimi HTTP adapter", () => {
   let server: Server;

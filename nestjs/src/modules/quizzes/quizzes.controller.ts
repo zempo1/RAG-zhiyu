@@ -3,53 +3,17 @@ import {
   Controller,
   Get,
   Post,
-  Patch,
   Delete,
   Param,
   Query,
   Headers,
   HttpCode,
 } from "@nestjs/common";
-import {
-  IsInt,
-  Min,
-  Max,
-  IsUUID,
-  IsOptional,
-  IsString,
-  MaxLength,
-  IsArray,
-  ArrayMaxSize,
-  ArrayUnique,
-  IsIn,
-  IsBoolean,
-} from "class-validator";
-import { Type } from "class-transformer";
 import { UserId } from "../auth/auth.guard";
 import { IdPipe } from "../../common/pipes/id.pipe";
 import { QuizzesService } from "./quizzes.service";
-class GenerateQuizDto {
-  @IsInt() @Min(1) documentId: number;
-  @IsInt() @Min(0) @Max(20) singleCount: number;
-  @IsInt() @Min(0) @Max(20) multipleCount: number;
-  @IsUUID() requestId: string;
-}
-class StartQuizAttemptDto {
-  @IsUUID() requestId: string;
-}
-export class QuizAnswerProgressDto {
-  @IsOptional() @IsString() @MaxLength(10) questionId?: string;
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(4)
-  @ArrayUnique()
-  @IsIn(["A", "B", "C", "D"], { each: true })
-  selectedOptionIds?: string[];
-  @IsOptional() @IsBoolean() submit?: boolean;
-}
-class QuizProgressDto extends QuizAnswerProgressDto {
-  @IsOptional() @IsInt() @Min(0) @Max(19) currentIndex?: number;
-}
+import { GenerateQuizDto, StartQuizAttemptDto } from "./dto/quiz.dto";
+
 @Controller("api/quizzes")
 export class QuizzesController {
   constructor(private readonly service: QuizzesService) {}
@@ -85,19 +49,5 @@ export class QuizzesController {
     @Body() dto: StartQuizAttemptDto,
   ) {
     return this.service.startAttempt(id, user, dto.requestId);
-  }
-}
-@Controller("api/quiz-attempts")
-export class QuizAttemptsController {
-  constructor(private readonly service: QuizzesService) {}
-  @Get(":id") get(@Param("id", IdPipe) id: number, @UserId() user: number) {
-    return this.service.getAttempt(id, user);
-  }
-  @Patch(":id/progress") progress(
-    @Param("id", IdPipe) id: number,
-    @UserId() user: number,
-    @Body() dto: QuizProgressDto,
-  ) {
-    return this.service.progress(id, user, dto);
   }
 }

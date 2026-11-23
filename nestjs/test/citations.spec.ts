@@ -1,6 +1,6 @@
 import { pipeline } from "./helpers/pipeline";
 import { RagService } from "../src/modules/rag/rag.service";
-import { normalizeCitations } from "../src/modules/rag/citations";
+import { normalizeCitations } from "../src/modules/rag/citations/citations";
 import { HistoryService } from "../src/modules/history/history.service";
 
 describe("scoped retrieval and citation snapshots", () => {

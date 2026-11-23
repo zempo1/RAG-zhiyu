@@ -2,12 +2,12 @@ import { jest } from "@jest/globals";
 import { ConfigService } from "@nestjs/config";
 import { pipeline } from "./helpers/pipeline";
 import { HistoryService } from "../src/modules/history/history.service";
-import { AgentQaTasksService } from "../src/modules/tasks/agent-qa.service";
+import { AgentQaTasksService } from "../src/modules/tasks/qa/agent-qa.service";
 import { AgentService } from "../src/modules/agent/agent.service";
-import { AgentGraphRun } from "../src/modules/agent/agent-graph-run";
-import { MysqlAgentCheckpointer } from "../src/modules/agent/mysql-agent-checkpointer";
+import { AgentGraphRun } from "../src/modules/agent/graph/agent-graph-run";
+import { MysqlAgentCheckpointer } from "../src/modules/agent/checkpoint/mysql-agent-checkpointer";
 import { emptyCheckpoint } from "@langchain/langgraph";
-import { AgentBudget } from "../src/modules/agent/agent-budget";
+import { AgentBudget } from "../src/modules/agent/graph/agent-budget";
 
 it("hands a native graph thread to a new worker without storing or replaying its plan", async () => {
   const p = await fixture();

@@ -5,9 +5,9 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DocumentParser } from "../src/modules/documents/parsers/document.parser";
-import { PdfVisualService } from "../src/modules/documents/parsers/pdf-visual.service";
-import { textPositions } from "../src/modules/documents/parsers/pdf-layout";
-import { PageAssetsService } from "../src/modules/documents/page-assets.service";
+import { PdfVisualService } from "../src/modules/documents/parsers/pdf/vision/pdf-visual.service";
+import { textPositions } from "../src/modules/documents/parsers/pdf/layout/pdf-layout";
+import { PageAssetsService } from "../src/modules/documents/originals/page-assets.service";
 import { MemoryStore } from "../src/persistence/memory.store";
 
 const scope = { userId: 1, documentId: 1, versionId: 1 };

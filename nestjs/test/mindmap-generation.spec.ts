@@ -155,7 +155,7 @@ it("does not issue a JSON repair call after cancellation", async () => {
       {
         complete: async () => {
           calls++;
-          await p.tasks.cancelMindMap(taskId, 1);
+          await p.tasks.cancel(taskId, 1);
           return "{}";
         },
       } as any,

@@ -1,5 +1,5 @@
 import { pipeline } from "./helpers/pipeline";
-import { TaskQueueRuntime } from "../src/modules/tasks/task-queue.runtime";
+import { TaskQueueRuntime } from "../src/modules/tasks/queue/task-queue.runtime";
 
 it("does not steal a live index execution on duplicate delivery", async () => {
   const p = await pipeline();

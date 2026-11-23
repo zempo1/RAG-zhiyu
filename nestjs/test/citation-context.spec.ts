@@ -1,4 +1,4 @@
-import { expandCitationContext } from "../src/modules/documents/citation-context";
+import { expandCitationContext } from "../src/modules/documents/originals/citation-context";
 
 it("restores the complete paragraph around a mid-sentence PDF citation", () => {
   const paragraph = "院内事件是患者住院期间发生的非\n预期事件。下一句补充了定义。";

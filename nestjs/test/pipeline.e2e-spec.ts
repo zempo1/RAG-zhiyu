@@ -16,7 +16,7 @@ import { MysqlStore } from "../src/persistence/mysql.store";
 import { configureApp } from "../src/bootstrap";
 import { EmbeddingsService } from "../src/modules/embeddings/embeddings.service";
 import { LlmService } from "../src/modules/llm/llm.service";
-import { TaskQueueRuntime } from "../src/modules/tasks/task-queue.runtime";
+import { TaskQueueRuntime } from "../src/modules/tasks/queue/task-queue.runtime";
 import { KnowledgeBases1793404800000 } from "../src/persistence/migrations/1793404800000-knowledge-bases";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { Queue } from "bullmq";

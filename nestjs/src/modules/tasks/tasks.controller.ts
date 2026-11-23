@@ -1,24 +1,20 @@
 import { Controller, Delete, Get, Param, Post, Query } from "@nestjs/common";
 import { Type } from "class-transformer";
 import { IsInt, Min } from "class-validator";
-import { REVIEW_CLASSIFICATION, TasksService } from "./tasks.service";
+import { TasksService } from "./tasks.service";
 import { UserId } from "../auth/auth.guard";
 import { IdPipe } from "../../common/pipes/id.pipe";
-import { AgentQaTasksService } from "./agent-qa.service";
 
 class TasksQuery {
   @Type(() => Number) @IsInt() @Min(1) knowledgeBaseId: number;
 }
 @Controller("api/tasks")
 export class TasksController {
-  constructor(
-    private readonly tasks: TasksService,
-    private readonly agentTasks: AgentQaTasksService,
-  ) {}
-  @Post(":id/cancel") async cancel(@UserId() user: number, @Param("id", IdPipe) id: number) {
-    if (["mindmap", "quiz", REVIEW_CLASSIFICATION].includes((await this.tasks.get(id, user)).kind))
-      return this.tasks.cancelMindMap(id, user);
-    return this.agentTasks.cancel(id, user);
+  constructor(private readonly tasks: TasksService) {}
+
+  @Post(":id/cancel")
+  cancel(@UserId() user: number, @Param("id", IdPipe) id: number) {
+    return this.tasks.cancel(id, user);
   }
   @Delete() clear(@UserId() user: number, @Query() query: TasksQuery) {
     return this.tasks.clearCompleted(user, query.knowledgeBaseId);

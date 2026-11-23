@@ -3,17 +3,18 @@ import { Injectable, Optional, Logger } from "@nestjs/common";
 import { createHash } from "node:crypto";
 import { ApiError } from "../../../common/api-error";
 import { ParsedDocument, PdfSourceAnchor, paragraphBlocks } from "./parsed-document";
-import { shiftSourceLocation, sliceSourceLocation } from "./source-anchors";
-import { PdfVisualService, ParseContext, markPdfFailure } from "./pdf-visual.service";
-import { localRendering } from "./vision-scheduler";
-import { spoolPages } from "./parsed-page-cache";
-import { textPositions } from "./pdf-layout";
+import { shiftSourceLocation, sliceSourceLocation } from "./pdf/layout/source-anchors";
+import { PdfVisualService, ParseContext } from "./pdf/vision/pdf-visual.service";
+import { markPdfFailure } from "./pdf/vision/vision-output";
+import { localRendering } from "./pdf/vision/vision-scheduler";
+import { spoolPages } from "./pdf/cache/parsed-page-cache";
+import { textPositions } from "./pdf/layout/pdf-layout";
 import {
   detectPdfTableGrids,
   hasPageTailTable,
   linkAdjacentPageTables,
   splitNativeTableBlocks,
-} from "./pdf-table-layout";
+} from "./pdf/layout/pdf-table-layout";
 
 type PageProgress = (done: number, total: number) => void | Promise<void>;
 

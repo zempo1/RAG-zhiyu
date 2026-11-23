@@ -1,10 +1,13 @@
+import { EventEmitter } from "node:events";
 import { ChatController } from "../src/modules/chat/chat.controller";
+import { ApiError } from "../src/common/api-error";
+import { ChatWorkflowService } from "../src/modules/chat/chat-workflow.service";
 import { validate } from "class-validator";
 import { plainToInstance } from "class-transformer";
 import { ChatDto } from "../src/modules/chat/dto/chat.dto";
 import { createHash } from "node:crypto";
 it("普通聊天幂等指纹与既有版本保持一致", () => {
-  const controller = new ChatController({} as any, {} as any, {} as any);
+  const workflow = new ChatWorkflowService({} as any, {} as any, {} as any);
   const body = {
     question: "普通问题",
     chatId: 1,
@@ -12,7 +15,7 @@ it("普通聊天幂等指纹与既有版本保持一致", () => {
     documentIds: [4, 3],
     mode: "auto",
   };
-  expect((controller as any).fingerprint(body)).toBe(
+  expect((workflow as any).fingerprint(body)).toBe(
     createHash("sha256")
       .update(JSON.stringify([1, 2, "普通问题", [3, 4], "auto"]))
       .digest("hex"),
@@ -39,8 +42,8 @@ it("测验权威上下文在指纹及任务受理前解析，强制唯一文档�
       return {};
     },
   };
-  const controller = new ChatController(chat, history, qa, undefined, quizzes);
-  await (controller as any).prepare(
+  const workflow = new ChatWorkflowService(chat, history, qa, undefined, quizzes);
+  await workflow.prepare(
     {
       question: "为什么",
       knowledgeBaseId: 3,
@@ -73,7 +76,7 @@ it("测验聊天只保存一次服务端整理的简短题目，不追加重复�
     prepared = "";
   const canonical =
     "我在测验中遇到了这道题：\n题目？\nA. 选项甲\nB. 选项乙\n我的选择：A\n参考答案：B\n请结合原文深入讲解。";
-  const controller = new ChatController(
+  const workflow = new ChatWorkflowService(
     {
       prepare: async (q: string) => {
         prepared = q;
@@ -97,7 +100,7 @@ it("测验聊天只保存一次服务端整理的简短题目，不追加重复�
       }),
     } as any,
   );
-  await (controller as any).prepare(
+  await workflow.prepare(
     {
       question: "客户端重复题目模板",
       quizContext: { attemptId: 1, questionId: "q1" },
@@ -117,7 +120,7 @@ it("Agent后台受理同样只持久化简短题目", async () => {
     },
     accepted: () => ({ taskId: 1 }),
   };
-  const controller = new ChatController(
+  const workflow = new ChatWorkflowService(
     {} as any,
     {} as any,
     {} as any,
@@ -131,7 +134,7 @@ it("Agent后台受理同样只持久化简短题目", async () => {
       }),
     } as any,
   );
-  await (controller as any).prepare(
+  await workflow.prepare(
     {
       question: "重复模板和不应显示的原文坐标",
       quizContext: { attemptId: 1, questionId: "q1" },
@@ -140,4 +143,50 @@ it("Agent后台受理同样只持久化简短题目", async () => {
     1,
   );
   expect(persisted).toBe("题目与选择，请深入讲解。");
+});
+
+it("测验来源在 SSE 校验期间改变时不受理任务", async () => {
+  let sourceChanged = false;
+  let started = false;
+  const workflow = new ChatWorkflowService(
+    {} as any,
+    {
+      writable: async () => {
+        sourceChanged = true;
+      },
+    } as any,
+    {} as any,
+    {
+      begin: async () => {
+        started = true;
+        return { existing: true, task: { id: 1 } };
+      },
+      accepted: () => ({ taskId: 1 }),
+    } as any,
+    {
+      resolveChatContext: async () => {
+        if (sourceChanged) throw new ApiError(409, "测验来源已更新");
+        return { question: "权威题目", knowledgeBaseId: 3, documentIds: [9], mode: "search" };
+      },
+    } as any,
+  );
+  const frames: string[] = [];
+  const res = Object.assign(new EventEmitter(), {
+    status: () => res,
+    set: () => res,
+    flushHeaders: () => {},
+    write: (frame: string) => {
+      frames.push(frame);
+      return true;
+    },
+    end: () => {},
+  });
+  await new ChatController(workflow).stream(
+    { question: "为什么", chatId: 1, quizContext: { attemptId: 1, questionId: "q1" } },
+    1,
+    undefined,
+    res as any,
+  );
+  expect(started).toBe(false);
+  expect(frames.join("")).toContain("测验来源已更新");
 });

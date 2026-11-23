@@ -1,11 +1,10 @@
 import { jest } from "@jest/globals";
 import { ConfigService } from "@nestjs/config";
 import { MemoryStore } from "../src/persistence/memory.store";
+import { RetrievalService } from "../src/modules/rag/retrieval/retrieval.service";
 import { KnowledgeBasesService } from "../src/modules/knowledge-bases/knowledge-bases.service";
 
 async function fixture() {
-  const module = await import("../src/modules/rag/" + "retrieval.service").catch(() => ({}) as any);
-  expect(module.RetrievalService).toBeDefined();
   const store = new MemoryStore();
   const kb = await store.save("knowledgeBases", { userId: 1, name: "kb" });
   const revision = await store.save("indexRevisions", {});
@@ -36,9 +35,9 @@ async function fixture() {
   });
   const embeddings = { embedQuery: jest.fn(async () => [1]) };
   const vectors = { search: jest.fn(async () => []) };
-  const service = new module.RetrievalService(
-    embeddings,
-    vectors,
+  const service = new RetrievalService(
+    embeddings as any,
+    vectors as any,
     store,
     new KnowledgeBasesService(store),
     undefined,
