@@ -183,6 +183,111 @@ describe("existing Vue API contract", () => {
     await request(app.getHttpServer()).post("/api/chat").set(auth()).send(body).expect(202);
     expect(finalCalls - before).toBe(1);
   });
+  it("collects a wrong answer on submit and grades its review without altering the original attempt", async () => {
+    const api = request(app.getHttpServer());
+    const store = app.get(Store);
+    const source = (await store.get("documents", doc))!;
+    const { userId, knowledgeBaseId } = source;
+    const quiz = await store.save("quizzes", {
+      userId,
+      knowledgeBaseId,
+      documentId: doc,
+      versionId: source.activeVersionId,
+      indexRevisionId: source.activeIndexRevisionId,
+      title: "复练接口测试",
+      filename: source.filename,
+      singleCount: 1,
+      multipleCount: 0,
+      questions: [
+        {
+          id: "q1",
+          type: "SINGLE",
+          stem: "以太网帧中包含什么？",
+          knowledgePoint: "以太网帧",
+          options: [
+            { id: "A", text: "源地址" },
+            { id: "B", text: "电影" },
+          ],
+          correctOptionIds: ["A"],
+          explanation: "首部含源地址。",
+          evidence: [],
+          optionExplanations: {},
+        },
+      ],
+    });
+    const attempt = await api
+      .post(`/api/quizzes/${quiz.id}/attempts`)
+      .set(auth())
+      .send({ requestId: randomUUID() })
+      .expect(200);
+    const path = `/api/quiz-attempts/${attempt.body.data.id}`;
+    const wrong = { questionId: "q1", selectedOptionIds: ["B"], submit: true };
+    await api.patch(`${path}/progress`).set(auth()).send(wrong).expect(200);
+    await api.patch(`${path}/progress`).set(auth()).send(wrong).expect(200);
+    const workspace = "/api/quiz-reviews/workspace";
+    const report = await api.get(workspace).query({ knowledgeBaseId }).set(auth()).expect(200);
+    expect(report.body.data.items).toMatchObject([
+      { quizId: quiz.id, wrongCount: 1, status: "pending", topicKey: null },
+    ]);
+    const categories = "/api/quiz-reviews/categories";
+    const category = await api
+      .post(categories)
+      .set(auth())
+      .send({ knowledgeBaseId, label: "以太网帧" })
+      .expect(200);
+    const topic = category.body.data.key;
+    const item = report.body.data.items[0].id;
+    const assignment = `/api/quiz-reviews/items/${item}/category`;
+    await api.patch(assignment).set(auth()).send({ knowledgeBaseId, topic }).expect(200);
+    await api
+      .get(workspace)
+      .query({ knowledgeBaseId })
+      .set({ Authorization: `Bearer ${other}` })
+      .expect(404);
+    const started = await api
+      .post("/api/quiz-reviews/practices")
+      .set(auth())
+      .send({ knowledgeBaseId, topic, mode: "original", requestId: randomUUID() })
+      .expect(200);
+    const review = `/api/quiz-reviews/practices/${started.body.data.practiceId}`;
+    const opened = await api.get(review).set(auth()).expect(200);
+    expect(opened.body.data.questions[0].correctOptionIds).toBeUndefined();
+    await api
+      .patch(`${review}/progress`)
+      .set(auth())
+      .send({ ...wrong, selectedOptionIds: ["A"] })
+      .expect(200);
+    const mastered = await api
+      .get(workspace)
+      .query({ knowledgeBaseId, status: "mastered" })
+      .set(auth())
+      .expect(200);
+    expect(mastered.body.data.items).toMatchObject([{ quizId: quiz.id, status: "mastered" }]);
+    await api.delete(review).set({ Authorization: `Bearer ${other}` }).expect(404);
+    await api.delete(review).set(auth()).expect(200);
+    await api.get(review).set(auth()).expect(404);
+    const previous = await api.get(path).set(auth()).expect(200);
+    expect(previous.body.data.answers.q1).toMatchObject({
+      isCorrect: false,
+      selectedOptionIds: ["B"],
+    });
+    await api
+      .delete(`${categories}/${encodeURIComponent(topic)}`)
+      .set(auth())
+      .query({ knowledgeBaseId })
+      .expect(200);
+    const remaining = await api
+      .get(workspace)
+      .query({ knowledgeBaseId, status: "mastered" })
+      .set(auth())
+      .expect(200);
+    expect(remaining.body.data).toMatchObject({
+      topics: [],
+      items: [{ id: item, topicKey: null }],
+      practices: [],
+    });
+    await api.delete(`/api/quizzes/${quiz.id}`).set(auth()).expect(200);
+  });
   it("rejects invalid, empty and oversized files and missing questions", async () => {
     await request(app.getHttpServer())
       .post("/api/upload")
@@ -283,7 +388,7 @@ describe("existing Vue API contract", () => {
     await request(app.getHttpServer()).delete(`/api/chats/${id}`).set(auth()).expect(200);
   });
   it("migrates analyses, flashcards and mind map CRUD", async () => {
-    for (const type of ["SUMMARY", "OUTLINE", "FLASHCARD"]) {
+    for (const type of ["SUMMARY", "FLASHCARD"]) {
       const res = await request(app.getHttpServer())
         .post("/api/analysis/generate")
         .set(auth())
@@ -302,6 +407,16 @@ describe("existing Vue API contract", () => {
         .set(auth())
         .expect(200);
     }
+    await request(app.getHttpServer())
+      .post("/api/analysis/generate")
+      .set(auth())
+      .send({ documentId: doc, type: "OUTLINE" })
+      .expect(400);
+    await request(app.getHttpServer())
+      .get("/api/analysis")
+      .query({ type: "OUTLINE" })
+      .set(auth())
+      .expect(400);
     const map = await request(app.getHttpServer())
       .post("/api/mindmaps/generate")
       .set(auth())

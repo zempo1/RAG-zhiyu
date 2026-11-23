@@ -13,6 +13,7 @@ import { ModelOutputError } from "../src/modules/llm/llm.types";
 const q = (type: string, stem: string) => ({
   type,
   stem,
+  knowledgePoint: "开花条件",
   options: ["A", "B", "C", "D"].map((id) => ({ id, text: `选项${id}` })),
   correctOptionIds: type === "SINGLE" ? ["A"] : ["A", "B"],
   explanation: "解释",
@@ -105,6 +106,205 @@ describe("测验原文生成与发布竞态", () => {
     expect(calls).toBe(2);
     expect((await store.get("tasks", 1))?.status).toBe("failed");
     expect(await store.list("quizzes")).toHaveLength(0);
+  });
+  it("避开同一文档旧版本题目及选项换序，返回知识点", async () => {
+    const oldQuestion = q("SINGLE", "哪种处理能促进开花？");
+    await store.save("quizzes", {
+      userId: 1,
+      knowledgeBaseId: 1,
+      documentId: 1,
+      versionId: 0,
+      questions: [oldQuestion],
+    });
+    await store.save("tasks", {
+      id: 1,
+      payload: { versionId: 1, singleCount: 1, multipleCount: 0 },
+    });
+    const rotated = {
+      ...oldQuestion,
+      stem: "哪种处理能促进开花 ?",
+      options: oldQuestion.options.map(({ id }, index) => ({
+        id,
+        text: oldQuestion.options[(index + 1) % 4].text,
+      })),
+      correctOptionIds: ["D"],
+    };
+    const distinct = { ...q("SINGLE", "低温处理需要持续多久？"), knowledgePoint: "植物开花调控" };
+    let generationCalls = 0;
+    const runner = new QuizRunner(
+      store,
+      {
+        complete: async (prompt: string) => {
+          if (prompt.includes("题目判重")) return '{"duplicates":[]}';
+          return JSON.stringify({ questions: [++generationCalls === 1 ? rotated : distinct] });
+        },
+      } as any,
+      config,
+      new TokenizerService(config),
+    );
+    await runner.process(1);
+    expect(generationCalls).toBe(2);
+    expect((await store.list("quizzes"))[1].questions[0]).toMatchObject({
+      id: "q1",
+      stem: distinct.stem,
+      knowledgePoint: "植物开花调控",
+    });
+  });
+  it("模型识别同义改写，连续重复会说明原因且不发布", async () => {
+    await store.save("quizzes", {
+      userId: 1,
+      knowledgeBaseId: 1,
+      documentId: 1,
+      versionId: 0,
+      questions: [q("SINGLE", "提高温度对植物开花有什么影响？")],
+    });
+    await store.save("tasks", {
+      id: 1,
+      payload: { versionId: 1, singleCount: 1, multipleCount: 0 },
+    });
+    let comparisons = 0;
+    const runner = new QuizRunner(
+      store,
+      {
+        complete: async (prompt: string) => {
+          if (prompt.includes("题目判重")) {
+            comparisons++;
+            return '{"duplicates":["p1"]}';
+          }
+          return JSON.stringify({ questions: [q("SINGLE", "温度升高会怎样改变植物开花？")] });
+        },
+      } as any,
+      config,
+      new TokenizerService(config),
+    );
+    await runner.process(1);
+    expect(comparisons).toBe(2);
+    expect((await store.get("tasks", 1))?.error).toMatch(/不重复题/);
+    expect(await store.list("quizzes")).toHaveLength(1);
+  });
+  it("并发保存的同题被拦截并重新生成", async () => {
+    await store.save("tasks", {
+      id: 1,
+      payload: { versionId: 1, singleCount: 1, multipleCount: 0 },
+    });
+    const concurrent = q("SINGLE", "哪些条件可以促进开花？");
+    let calls = 0;
+    const runner = new QuizRunner(
+      store,
+      {
+        complete: async (prompt: string) => {
+          if (prompt.includes("题目判重")) return '{"duplicates":[]}';
+          if (++calls === 1) {
+            await store.save("quizzes", {
+              userId: 1,
+              knowledgeBaseId: 1,
+              documentId: 1,
+              versionId: 1,
+              questions: [concurrent],
+            });
+            return JSON.stringify({ questions: [concurrent] });
+          }
+          return JSON.stringify({ questions: [q("SINGLE", "播种时间与开花有何关系？")] });
+        },
+      } as any,
+      config,
+      new TokenizerService(config),
+    );
+    await runner.process(1);
+    expect(calls).toBe(2);
+    expect((await store.list("quizzes")).map((row) => row.questions[0].stem)).toEqual([
+      concurrent.stem,
+      "播种时间与开花有何关系？",
+    ]);
+  });
+  it("同一文档连续生成两套十题，保留相同知识点的不同考法", async () => {
+    let set = 1;
+    let sequence = 0;
+    let comparisons = 0;
+    const payload = { versionId: 1, singleCount: 10, multipleCount: 0 };
+    const runner = new QuizRunner(
+      store,
+      {
+        complete: async (prompt: string) => {
+          if (prompt.includes("题目判重")) {
+            comparisons++;
+            return '{"duplicates":[]}';
+          }
+          return JSON.stringify({
+            questions: Array.from({ length: 2 }, () =>
+              q("SINGLE", `开花条件第${set}套的应用情景${++sequence}`),
+            ),
+          });
+        },
+      } as any,
+      config,
+      new TokenizerService(config),
+    );
+    await store.save("tasks", { id: 1, payload });
+    await runner.process(1);
+    set++;
+    await store.save("tasks", {
+      id: 2,
+      kind: "quiz",
+      userId: 1,
+      knowledgeBaseId: 1,
+      documentId: 1,
+      indexRevisionId: 1,
+      status: "queued",
+      payload,
+    });
+    await runner.process(2);
+    const sets = await store.list("quizzes");
+    expect(sets.map(({ questions }) => questions.length)).toEqual([10, 10]);
+    expect(
+      new Set(sets.flatMap(({ questions }) => questions.map(({ stem }: { stem: string }) => stem)))
+        .size,
+    ).toBe(20);
+    expect(comparisons).toBe(5);
+  });
+  it("变式优先采用当前所选文档的相关原文，并原子创建复练记录", async () => {
+    await store.save("chunks", {
+      id: 2,
+      documentId: 1,
+      versionId: 1,
+      indexRevisionId: 1,
+      chunkIndex: 1,
+      text: "这是与指定范围无关的酶浓度资料。",
+    });
+    await store.save("tasks", {
+      id: 1,
+      payload: {
+        versionId: 1,
+        filename: "test.md",
+        singleCount: 1,
+        multipleCount: 0,
+        reviewTopicKey: "开花条件",
+        reviewTopicLabel: "开花条件",
+        requestId: "8026f481-269e-4ade-8310-231b9b85bf35",
+        reviewEvidenceChunkIds: [1],
+      },
+    });
+    const runner = new QuizRunner(
+      store,
+      {
+        complete: async (prompt: string) => {
+          expect(prompt).toContain('只考查知识点 "开花条件"');
+          expect(prompt).not.toContain("无关的酶浓度资料");
+          return JSON.stringify({ questions: [q("SINGLE", "温室照明的调节方案是什么？")] });
+        },
+      } as any,
+      config,
+      new TokenizerService(config),
+    );
+    await runner.process(1);
+    const [quiz] = await store.list("quizzes");
+    expect(quiz.reviewTopicKey).toBe("开花条件");
+    const task = await store.get("tasks", 1);
+    expect(task?.status).toBe("completed");
+    expect(task?.payload.quizResult).toMatchObject({
+      quizId: quiz.id,
+      practiceId: expect.any(Number),
+    });
   });
   it("两题输出截断后改为每批一题，不发布半套且不改变配比", async () => {
     let calls = 0;

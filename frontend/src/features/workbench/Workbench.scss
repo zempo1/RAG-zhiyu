@@ -113,6 +113,8 @@
     font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
+    border: 0;
+    background: transparent;
     border-bottom: 2px solid transparent;
     transition: all 0.2s;
     border-radius: 4px 4px 0 0;
@@ -121,6 +123,11 @@
     &:hover {
       color: var(--text-primary);
       background: light-dark(rgba(51, 85, 126, 0.045), rgba(255, 255, 255, 0.04));
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent-color);
+      outline-offset: -2px;
     }
 
     &.active {

@@ -26,10 +26,21 @@ import { ModelSettings1794355200000 } from "./migrations/1794355200000-model-set
 
 import { Quiz, QuizAttempt } from "../modules/quizzes/entities/quiz.entity";
 import { Quizzes1794873600000 } from "./migrations/1794873600000-quizzes";
+import {
+  QuizWrongItem,
+  QuizReviewPractice,
+  QuizReviewCategory,
+} from "../modules/quizzes/entities/quiz-review.entity";
+import { RemoveOutlines1795219200001 } from "./migrations/1795219200001-remove-outlines";
+import { QuizReviews1795219200002 } from "./migrations/1795219200002-quiz-reviews";
+import { ManualQuizCategories1795219200003 } from "./migrations/1795219200003-manual-quiz-categories";
 
 export const entityTargets = {
   quizzes: Quiz,
   quizAttempts: QuizAttempt,
+  quizWrongItems: QuizWrongItem,
+  quizReviewPractices: QuizReviewPractice,
+  quizReviewCategories: QuizReviewCategory,
   modelSettings: ModelSetting,
   agentCheckpoints: AgentCheckpoint,
   agentCheckpointWrites: AgentCheckpointWrite,
@@ -74,6 +85,9 @@ export function mysqlOptions(env: Record<string, any>): DataSourceOptions {
       AgentCheckpoints1794268800000,
       ModelSettings1794355200000,
       Quizzes1794873600000,
+      RemoveOutlines1795219200001,
+      QuizReviews1795219200002,
+      ManualQuizCategories1795219200003,
     ],
     synchronize: false,
     migrationsRun: false,

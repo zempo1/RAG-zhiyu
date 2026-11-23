@@ -119,7 +119,7 @@ test("first upload completes without navigation with a cold dependency cache", a
   }
 });
 
-test("chat source selection and mode are sent independently from the workbench", async ({
+test("chat sends selected sources with automatic routing independently from the workbench", async ({
   page,
 }) => {
   await fixture(page);
@@ -146,11 +146,9 @@ test("chat source selection and mode are sent independently from the workbench",
     .filter({ hasText: "资料.md" })
     .click();
   await page.keyboard.press("Escape");
-  await page.locator(".qa-controls > .el-select").nth(1).click();
-  await page.getByRole("option", { name: "全文概览", exact: true }).click();
   await page.getByPlaceholder("发送消息...").fill("总结所选资料");
   await page.getByPlaceholder("发送消息...").press("Enter");
-  await expect.poll(() => submitted?.mode).toBe("overview");
+  await expect.poll(() => submitted?.mode).toBe("auto");
   expect(submitted.documentIds).toEqual([1]);
   expect(submitted.requestId).toMatch(/^[a-f0-9-]{36}$/);
   await expect(page.getByRole("button", { name: "查看检索过程", exact: true })).toBeVisible();
@@ -242,7 +240,7 @@ test("reopening history restores sources and resumes a pending summary task", as
   );
   await page.getByText("历史问答", { exact: true }).click();
   await expect(page.locator(".message-row.assistant .generation-status")).toContainText("后台");
-  await expect(page.locator(".qa-controls")).toContainText("全文概览");
+  await expect(page.locator(".qa-controls")).toContainText("资料.md");
   complete = true;
   await expect(page.locator(".message-row.assistant .markdown-body")).toHaveText(
     "恢复后的后台答案",
@@ -634,7 +632,7 @@ test("refreshes derived artifacts only after a replacement task has actually com
   await page.getByRole("button", { name: "管理文档", exact: true }).click();
   await page.getByRole("button", { name: "用于工作台", exact: true }).click();
   await page.locator(".el-drawer__close-btn:visible").click();
-  await page.getByText("文档大纲", { exact: true }).click();
+  await page.getByText("学习卡片", { exact: true }).click();
   await expect.poll(() => state.analysisRequests).toBeGreaterThan(0);
   await page.getByRole("button", { name: "管理文档", exact: true }).click();
   const baseline = state.analysisRequests;
@@ -679,7 +677,7 @@ test("tracks a manually retried replacement until it publishes and refreshes the
   page,
 }) => {
   const state = await fixture(page);
-  await page.getByText("文档大纲", { exact: true }).click();
+  await page.getByText("学习卡片", { exact: true }).click();
   await expect.poll(() => state.analysisRequests).toBeGreaterThan(0);
   await page.getByRole("button", { name: "管理文档", exact: true }).click();
   const baseline = state.analysisRequests;

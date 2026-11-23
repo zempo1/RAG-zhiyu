@@ -4,13 +4,13 @@ const analysis = (documentName: string) => ({
   id: 21,
   documentId: 7,
   documentName,
-  type: "OUTLINE",
+  type: "FLASHCARD",
   content: "摘要正文",
   createdAt: "2026-11-15T01:00:00Z",
 });
 
 for (const [label, type] of [
-  ["文档大纲", "OUTLINE"],
+  ["错题整理", "review"],
   ["学习卡片", "FLASHCARD"],
 ]) {
   test(`${label}按知识库读取且忽略切换后的旧响应`, async ({ page }) => {
@@ -28,7 +28,7 @@ for (const [label, type] of [
           .replace(/"\/src\/app\/App\.vue(?:\?[^\"]*)?"/, '"/src/features/workbench/Workbench.vue"')
           .replace(
             "createApp(App)",
-            `createApp({setup(){const kb=ref(1);window.setLibrary=id=>kb.value=id;return()=>h(App,{uploadedFileName:'资料',uploadedDocumentId:7,knowledgeBaseId:kb.value});}})`,
+            `createApp({setup(){const kb=ref(1);window.setLibrary=id=>kb.value=id;return()=>h(App,{uploadedFileName:'资料',uploadedDocumentId:7,active:true,knowledgeBaseId:kb.value});}})`,
           );
         await route.fulfill({ response, body });
       },
@@ -37,17 +37,40 @@ for (const [label, type] of [
       (url) => url.pathname.startsWith("/api/"),
       async (route) => {
         const url = new URL(route.request().url());
-        if (url.pathname === "/api/analysis") {
-          expect(url.searchParams.get("type")).toBe(type);
+        const reviewRoute = url.pathname === "/api/quiz-reviews/workspace";
+        if (url.pathname === "/api/analysis" || reviewRoute) {
+          expect(reviewRoute ? "review" : url.searchParams.get("type")).toBe(type);
           const kb = url.searchParams.get("knowledgeBaseId");
           expect(["1", "2"]).toContain(kb);
           if (kb === "1") {
             oldStarted = true;
             await gate;
           }
-          await route.fulfill({
-            json: { data: [{ ...analysis(kb === "1" ? "旧知识库内容" : "新知识库内容"), type }] },
-          });
+          const title = kb === "1" ? "旧知识库内容" : "新知识库内容";
+          const data = reviewRoute
+            ? {
+                items: [
+                  {
+                    id: 21,
+                    stem: title,
+                    filename: "资料.md",
+                    status: "pending",
+                    wrongCount: 1,
+                    lastWrongAt: "2026-11-22",
+                    topicKey: "example",
+                    topicLabel: "知识点",
+                  },
+                ],
+                total: 1,
+                page: 1,
+                pageSize: 20,
+                counts: { pending: 1, mastered: 0, unclassified: 0 },
+                documents: [],
+                topics: [],
+                practices: [],
+              }
+            : [analysis(title)];
+          await route.fulfill({ json: { data } });
         } else await route.fulfill({ json: { data: { items: [], generationTasks: [] } } });
       },
     );
@@ -184,11 +207,7 @@ async function mountWorkbench(
   await expect(page.locator(".workbench")).toBeVisible();
 }
 
-async function invoke(
-  page: Page,
-  method: "refresh" | "onSourceDeleted" | "loadOutlines",
-  argument?: number,
-) {
+async function invoke(page: Page, method: "refresh" | "onSourceDeleted", argument?: number) {
   await page.evaluate(
     async ({ method, argument }) => {
       await (window as any).workbench[method](argument);
@@ -204,36 +223,35 @@ test("刷新仅重取当前标签，其余已访问标签在下次打开时更�
     await route.fulfill({ json: { data: [] } });
   });
   await expect(page.getByText("暂无思维导图", { exact: true })).toBeVisible();
-  await page.locator(".wb-tab").getByText("文档大纲", { exact: true }).click();
-  await expect(page.getByText("暂无大纲记录", { exact: true })).toBeVisible();
+  await page.locator(".wb-tab").getByText("学习卡片", { exact: true }).click();
+  await expect(page.getByText("暂无学习卡片", { exact: true })).toBeVisible();
   await invoke(page, "refresh");
   expect(counts.get("/api/mindmaps/workspace")).toBe(1);
-  expect(counts.get("/api/analysis?type=OUTLINE")).toBe(2);
-  expect(counts.has("/api/analysis?type=FLASHCARD")).toBe(false);
+  expect(counts.get("/api/analysis?type=FLASHCARD")).toBe(2);
   await page.locator(".wb-tab").getByText("思维导图", { exact: true }).click();
   await expect.poll(() => counts.get("/api/mindmaps/workspace")).toBe(2);
-  await page.locator(".wb-tab").getByText("文档大纲", { exact: true }).click();
-  await expect(page.getByText("暂无大纲记录", { exact: true })).toBeVisible();
-  expect(counts.get("/api/analysis?type=OUTLINE")).toBe(2);
+  await page.locator(".wb-tab").getByText("学习卡片", { exact: true }).click();
+  await expect(page.getByText("暂无学习卡片", { exact: true })).toBeVisible();
+  expect(counts.get("/api/analysis?type=FLASHCARD")).toBe(2);
 });
 
 test("标签加载失败后重新切换会重试并显示结果", async ({ page }) => {
   let attempts = 0;
   await mountWorkbench(page, async (route, key) => {
-    if (key === "/api/analysis?type=OUTLINE") {
+    if (key === "/api/analysis?type=FLASHCARD") {
       attempts++;
       await route.fulfill(
         attempts === 1
           ? { status: 500, json: { message: "暂时不可用" } }
-          : { json: { data: [analysis("重试后摘要")] } },
+          : { json: { data: [analysis("重试后卡片")] } },
       );
     } else await route.fulfill({ json: { data: [] } });
   });
-  await page.locator(".wb-tab").getByText("文档大纲", { exact: true }).click();
-  await expect(page.getByText("暂无大纲记录", { exact: true })).toBeVisible();
+  await page.locator(".wb-tab").getByText("学习卡片", { exact: true }).click();
+  await expect(page.getByText("暂无学习卡片", { exact: true })).toBeVisible();
   await page.locator(".wb-tab").getByText("思维导图", { exact: true }).click();
-  await page.locator(".wb-tab").getByText("文档大纲", { exact: true }).click();
-  await expect(page.locator(".analysis-doc")).toHaveText("重试后摘要");
+  await page.locator(".wb-tab").getByText("学习卡片", { exact: true }).click();
+  await expect(page.locator(".map-title")).toHaveText("重试后卡片");
   expect(attempts).toBe(2);
 });
 
@@ -244,26 +262,19 @@ test("同一标签的并发读取复用在途请求", async ({ page }) => {
     release = resolve;
   });
   await mountWorkbench(page, async (route, key) => {
-    if (key === "/api/analysis?type=OUTLINE") {
+    if (key === "/api/analysis?type=FLASHCARD") {
       requests++;
       await ready;
       await route.fulfill({ json: { data: [analysis("共享加载结果")] } });
     } else await route.fulfill({ json: { data: [] } });
   });
-  await page.locator(".wb-tab").getByText("文档大纲", { exact: true }).click();
+  await page.locator(".wb-tab").getByText("学习卡片", { exact: true }).click();
   await expect.poll(() => requests).toBe(1);
   await page.locator(".wb-tab").getByText("思维导图", { exact: true }).click();
-  await page.locator(".wb-tab").getByText("文档大纲", { exact: true }).click();
-  const pending = page.evaluate(async () => {
-    await Promise.all([
-      (window as any).workbench.loadOutlines(),
-      (window as any).workbench.loadOutlines(),
-    ]);
-  });
+  await page.locator(".wb-tab").getByText("学习卡片", { exact: true }).click();
   await expect(page.getByText("加载中…", { exact: true })).toBeVisible();
   release();
-  await pending;
-  await expect(page.locator(".analysis-doc")).toHaveText("共享加载结果");
+  await expect(page.locator(".map-title")).toHaveText("共享加载结果");
   expect(requests).toBe(1);
 });
 
@@ -274,24 +285,24 @@ test("刷新后完成的过期请求不会覆盖新结果", async ({ page }) => 
     release = resolve;
   });
   await mountWorkbench(page, async (route, key) => {
-    if (key === "/api/analysis?type=OUTLINE") {
+    if (key === "/api/analysis?type=FLASHCARD") {
       requests++;
       const first = requests === 1;
       if (first) await ready;
-      await route.fulfill({ json: { data: [analysis(first ? "过期摘要" : "刷新后摘要")] } });
+      await route.fulfill({ json: { data: [analysis(first ? "过期卡片" : "刷新后卡片")] } });
     } else await route.fulfill({ json: { data: [] } });
   });
-  await page.locator(".wb-tab").getByText("文档大纲", { exact: true }).click();
+  await page.locator(".wb-tab").getByText("学习卡片", { exact: true }).click();
   await expect.poll(() => requests).toBe(1);
   await invoke(page, "refresh");
-  await expect(page.locator(".analysis-doc")).toHaveText("刷新后摘要");
+  await expect(page.locator(".map-title")).toHaveText("刷新后卡片");
   const oldResponse = page.waitForResponse((response) =>
-    response.url().includes("/api/analysis?type=OUTLINE"),
+    response.url().includes("/api/analysis?type=FLASHCARD"),
   );
   release();
   await oldResponse;
   await page.waitForLoadState("networkidle");
-  await expect(page.locator(".analysis-doc")).toHaveText("刷新后摘要");
+  await expect(page.locator(".map-title")).toHaveText("刷新后卡片");
 });
 
 test("删除来源只刷新当前标签，未打开的标签保持按需读取", async ({ page }) => {
@@ -303,12 +314,10 @@ test("删除来源只刷新当前标签，未打开的标签保持按需读取",
   await expect(page.getByText("暂无思维导图", { exact: true })).toBeVisible();
   await invoke(page, "onSourceDeleted", 7);
   expect(counts.get("/api/mindmaps/workspace")).toBe(2);
-  expect(counts.has("/api/analysis?type=OUTLINE")).toBe(false);
-  expect(counts.has("/api/analysis?type=OUTLINE")).toBe(false);
   expect(counts.has("/api/analysis?type=FLASHCARD")).toBe(false);
-  await page.locator(".wb-tab").getByText("文档大纲", { exact: true }).click();
-  await expect(page.getByText("暂无大纲记录", { exact: true })).toBeVisible();
-  expect(counts.get("/api/analysis?type=OUTLINE")).toBe(1);
+  await page.locator(".wb-tab").getByText("学习卡片", { exact: true }).click();
+  await expect(page.getByText("暂无学习卡片", { exact: true })).toBeVisible();
+  expect(counts.get("/api/analysis?type=FLASHCARD")).toBe(1);
 });
 
 const artifactTabs = [
@@ -326,15 +335,6 @@ const artifactTabs = [
       data: '{"data":{"text":"根节点"}}',
       createdAt: "2026-11-15T01:00:00Z",
     },
-  },
-  {
-    label: "文档大纲",
-    list: "/api/analysis?type=OUTLINE",
-    generate: "/api/analysis/generate",
-    remove: "/api/analysis/21",
-    button: "生成文档大纲",
-    title: ".analysis-doc",
-    item: { ...analysis("新产物"), type: "OUTLINE" },
   },
   {
     label: "学习卡片",

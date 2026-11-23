@@ -17,14 +17,14 @@
   --el-border-color-light: var(--border-color);
   --el-border-color-lighter: var(--border-color);
   --el-color-primary: light-dark(#345fcc, #b49aff);
-  --el-color-primary-light-3: #c7b3ff;
-  --el-color-primary-light-5: #695294;
-  --el-color-primary-light-7: #493963;
-  --el-color-primary-light-8: #352b48;
-  --el-color-primary-light-9: #282232;
-  --el-color-primary-dark-2: #a88bea;
+  --el-color-primary-light-3: light-dark(#5c77c7, #c7b3ff);
+  --el-color-primary-light-5: light-dark(#93a7d8, #695294);
+  --el-color-primary-light-7: light-dark(#c1cdec, #493963);
+  --el-color-primary-light-8: light-dark(#d8e1f4, #352b48);
+  --el-color-primary-light-9: light-dark(#e9effa, #282232);
+  --el-color-primary-dark-2: light-dark(#284ca6, #a88bea);
   --el-color-danger: light-dark(#9a294c, #ff939b);
-  --el-color-danger-light-9: #322126;
+  --el-color-danger-light-9: light-dark(#fbeef2, #322126);
   --el-color-warning: light-dark(#80520d, #efc078);
   --el-color-success: light-dark(#16644d, #77d9ba);
   --el-color-info: light-dark(#354052, #b4b4c0);
@@ -130,19 +130,6 @@
   gap: 10px;
   min-width: 0;
   padding-top: 4px;
-  > .el-select {
-    width: 100%;
-    min-width: 0;
-  }
-  .el-select__wrapper {
-    min-height: 44px;
-    background: light-dark(rgba(51, 85, 126, 0.045), rgba(255, 255, 255, 0.025));
-    border-radius: 11px;
-  }
-  .el-select__prefix {
-    color: light-dark(#51408a, #b49aff);
-    font-size: 18px;
-  }
   .picker-actions {
     display: flex;
     gap: 8px;
@@ -587,6 +574,7 @@
     font-weight: 500;
   }
   .library-option-name {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

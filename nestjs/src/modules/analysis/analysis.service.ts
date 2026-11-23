@@ -1,10 +1,11 @@
-/** 实现业务处理；所属能力：生成并管理文档摘要、大纲和学习卡片等分析结果。 */
+/** 生成并管理文档摘要和学习卡片。 */
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DocumentsService } from "../documents/documents.service";
 import { LlmService } from "../llm/llm.service";
 import { Store, Row, publicRow } from "../../persistence/store";
-import { analysisPrompt } from "./prompts";
+import { summaryPrompt } from "./prompts";
+import { isAnalysisType } from "./dto/analysis-type.dto";
 import { ApiError } from "../../common/api-error";
 import { TokenizerService } from "../embeddings/tokenizer.service";
 import { generateFlashcards } from "./flashcard-generation";
@@ -20,11 +21,12 @@ export class AnalysisService {
   ) {}
 
   async generate(documentId: number, type: string, userId: number, apiKey?: string) {
+    if (!isAnalysisType(type)) throw new ApiError(400, "不支持的分析类型");
     const doc = await this.documents.ready(documentId, userId);
     const flashcard = type === "FLASHCARD";
     const result = flashcard
       ? await this.generateCards(doc, apiKey)
-      : (await this.llm.complete(analysisPrompt(type, doc.content.slice(0, 20000)), apiKey)).trim();
+      : (await this.llm.complete(summaryPrompt(doc.content.slice(0, 20000)), apiKey)).trim();
     if (!result) throw new ApiError(500, "模型返回空内容");
     return publicRow(
       await this.store.transaction(async (tx) => {
@@ -94,6 +96,7 @@ export class AnalysisService {
   }
 
   async list(type: string, userId: number, knowledgeBaseId?: number) {
+    if (!isAnalysisType(type)) throw new ApiError(400, "不支持的分析类型");
     let allowed: Set<number> | undefined;
     if (knowledgeBaseId !== undefined) {
       const kb = await this.store.get("knowledgeBases", knowledgeBaseId);
@@ -123,7 +126,8 @@ export class AnalysisService {
 
   async delete(id: number, userId: number): Promise<void> {
     const row = await this.store.get("analyses", id);
-    if (!row || row.userId !== userId) throw new ApiError(500, "Analysis not found: " + id);
+    if (!row || row.userId !== userId || !isAnalysisType(row.type))
+      throw new ApiError(500, "Analysis not found: " + id);
     await this.store.delete("analyses", id);
   }
 }

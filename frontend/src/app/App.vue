@@ -6,11 +6,12 @@
     v-else
     class="app-layout"
     :class="{
-      'reader-is-open': !!readerTarget || mindMapId !== null || quizId !== null,
-      'panel-is-fullscreen': panelFullscreen,
+      'reader-is-open': !!readerTarget || mindMapId !== null || quizOpen,
+      'panel-is-fullscreen': panelFullscreen || reviewFullscreenActive,
     }"
   >
     <Sidebar
+      v-show="!reviewFullscreenActive"
       id="document-sidebar"
       ref="sidebarRef"
       v-model:collapsed="sidebarCollapsed"
@@ -35,7 +36,7 @@
     />
 
     <PanelResizeHandle
-      v-if="widths.desktop && !sidebarCollapsed && !panelFullscreen"
+      v-if="widths.desktop && !sidebarCollapsed && !panelFullscreen && !reviewFullscreenActive"
       label="调整文档侧栏宽度"
       controls="document-sidebar"
       :value="widths.sidebar"
@@ -45,9 +46,9 @@
       @reset="resetSidebarWidth"
     />
 
-    <main class="main-content">
+    <main v-show="!reviewFullscreenActive" class="main-content">
       <button
-        v-if="quizId !== null && quizHiddenForChat && !readerTarget"
+        v-if="quizOpen && quizHiddenForChat && !readerTarget"
         class="return-to-quiz"
         @click="quizHiddenForChat = false"
       >
@@ -65,7 +66,8 @@
 
     <PanelResizeHandle
       v-if="
-        widths.desktop && !panelFullscreen && !(rightMode === 'workbench' && workbenchCollapsed)
+        widths.desktop && !panelFullscreen && !reviewFullscreenActive &&
+        !(rightMode === 'workbench' && workbenchCollapsed)
       "
       label="调整右侧面板宽度"
       :controls="'panel-' + rightMode"
@@ -97,13 +99,15 @@
     />
 
     <QuizPanel
-      v-if="quizId !== null"
+      v-if="quizOpen"
       v-show="!readerTarget && !quizHiddenForChat"
       ref="quizPanelRef"
       id="panel-quiz"
-      :key="quizId"
+      :key="reviewPracticeId === null ? 'quiz-' + quizId : 'review-' + reviewPracticeId"
       :style="rightPanelStyle"
-      :quiz-id="quizId"
+      :quiz-id="quizId ?? undefined"
+      :practice-id="reviewPracticeId ?? undefined"
+      :reader-open="!!readerTarget"
       :restart="quizRestart"
       :chat-busy="chatAvailability.loading"
       @close="closeQuiz"
@@ -114,15 +118,19 @@
     />
 
     <Workbench
-      v-show="!readerTarget && mindMapId === null && quizId === null"
+      v-show="!readerTarget && mindMapId === null && !quizOpen"
       ref="workbenchRef"
       id="panel-workbench"
       :style="rightPanelStyle"
       v-model:collapsed="workbenchCollapsed"
-      :active="!readerTarget && mindMapId === null && quizId === null"
+      :review-fullscreen="reviewFullscreenActive"
+      :active="!readerTarget && mindMapId === null && !quizOpen"
       :knowledge-base-id="knowledgeBaseId"
       @open-mindmap="openMindMap"
       @open-quiz="openQuiz"
+      @open-review="openReview"
+      @review-fullscreen-change="reviewFullscreen = $event"
+      @open-source="openReader"
       :uploaded-file-name="uploadedFileName"
       :uploaded-document-id="uploadedDocumentId"
       :uploaded-document-ready="uploadedDocumentReady"
@@ -157,6 +165,9 @@ const QuizPanel = defineAsyncComponent(() => import("../features/quiz/QuizPanel.
 const quizId = ref<number | null>(null),
   quizRestart = ref(false),
   quizPanelRef = ref<any>();
+const reviewPracticeId = ref<number | null>(null);
+const reviewFullscreen = ref(false);
+const quizOpen = computed(() => quizId.value !== null || reviewPracticeId.value !== null);
 const quizHiddenForChat = ref(false),
   panelFullscreen = ref(false);
 const chatAvailability = ref({ loading: false, readOnly: false });
@@ -180,11 +191,23 @@ async function openQuiz(id: number, restart = false) {
     return;
   }
   quizRestart.value = restart;
+  reviewPracticeId.value = null;
   quizId.value = id;
+}
+async function openReview(id: number) {
+  const revision = ++panelRevision;
+  if (!(await leaveMindMap()) || revision !== panelRevision) return;
+  readerTarget.value = null;
+  mindMapId.value = null;
+  panelFullscreen.value = false;
+  quizHiddenForChat.value = false;
+  quizId.value = null;
+  reviewPracticeId.value = id;
 }
 function closeQuiz() {
   panelRevision++;
   quizId.value = null;
+  reviewPracticeId.value = null;
   quizHiddenForChat.value = false;
   panelFullscreen.value = false;
   refreshWorkbench();
@@ -221,6 +244,7 @@ async function openMindMap(id: number) {
   if (!(await leaveMindMap()) || revision !== panelRevision) return;
   readerTarget.value = null;
   quizId.value = null;
+  reviewPracticeId.value = null;
   panelFullscreen.value = false;
   mindMapId.value = id;
 }
@@ -249,7 +273,7 @@ const rightMode = computed<RightPanelMode>(() =>
     ? "reader"
     : mindMapId.value !== null
       ? "mindmap"
-      : quizId.value !== null
+      : quizOpen.value
         ? "quiz"
         : "workbench",
 );
@@ -263,7 +287,7 @@ const widths = computed(() =>
   ),
 );
 const rightPanelStyle = computed(() =>
-  widths.value.desktop && !panelFullscreen.value
+  widths.value.desktop && !panelFullscreen.value && !reviewFullscreenActive.value
     ? {
         width: widths.value.right + "px",
         flex: "0 0 auto",
@@ -299,6 +323,9 @@ const uploadedFileName = ref("");
 const uploadedDocumentId = ref<number | null>(null);
 const uploadedDocumentReady = ref(false);
 const readerTarget = ref<DocumentTarget | null>(null);
+const reviewFullscreenActive = computed(
+  () => reviewFullscreen.value && !readerTarget.value && mindMapId.value === null && !quizOpen.value,
+);
 let readerTrigger: HTMLElement | null = null;
 const openReader = async (target: DocumentTarget) => {
   const revision = ++panelRevision;
@@ -326,6 +353,8 @@ const closeReader = () => {
 const clearReader = () => {
   closeMindMap();
   quizId.value = null;
+  reviewPracticeId.value = null;
+  reviewFullscreen.value = false;
   quizHiddenForChat.value = false;
   readerTarget.value = null;
   readerTrigger = null;
@@ -354,7 +383,7 @@ const onFileActivated = (filename: string, id: number | null) => {
 const onFileDeleted = (id: number) => {
   if (quizPanelRef.value?.documentId?.() === id) closeQuiz();
   if (mindMapEditor.value?.documentId() === id) closeMindMap();
-  if (readerTarget.value?.documentId === id) clearReader();
+  if (readerTarget.value?.documentId === id) closeReader();
   if (uploadedDocumentId.value === id) onFileActivated("", null);
   workbenchRef.value?.onSourceDeleted(id);
 };

@@ -13,6 +13,7 @@ export interface Category {
   knowledgeBaseId: number;
 }
 export interface ProcessingTask {
+  quizPurpose?: "review_variant";
   mindmapResult?: { mindMapId: number; coverage?: Record<string, unknown> };
   mindmapProgress?: {
     strategy: "direct" | "batched";

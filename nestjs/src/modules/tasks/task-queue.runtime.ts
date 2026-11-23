@@ -7,7 +7,7 @@ import { ConfigService } from "@nestjs/config";
 import { Queue, Worker, UnrecoverableError, DelayedError } from "bullmq";
 import { Store, now } from "../../persistence/store";
 import { IndexingService } from "../documents/indexing.service";
-import { TasksService, terminalTask } from "./tasks.service";
+import { REVIEW_CLASSIFICATION, TasksService, terminalTask } from "./tasks.service";
 import { monitorEventLoopDelay, IntervalHistogram } from "node:perf_hooks";
 
 /** SQL is the outbox and source of truth; Redis only transports task ids. */
@@ -32,6 +32,24 @@ export class TaskQueueRuntime implements OnModuleInit, OnModuleDestroy {
     @Optional() private readonly quizzes?: QuizzesService,
   ) {}
 
+  private consumer(name: string) {
+    switch (name) {
+      case "quiz":
+        return this.quizzes!;
+      case "mindmap":
+        return this.mindmaps!;
+      case "qa":
+        return this.qa!;
+      default:
+        return this.indexing;
+    }
+  }
+
+  private queueName(kind: string) {
+    if (["quiz", "mindmap", "qa"].includes(kind)) return kind;
+    return kind === "index" ? "documents" : "cleanup";
+  }
+
   onModuleInit() {
     if (process.env.PROCESS_ROLE === "worker") {
       this.loopDelay = monitorEventLoopDelay({ resolution: 20 });
@@ -51,16 +69,10 @@ export class TaskQueueRuntime implements OnModuleInit, OnModuleDestroy {
             name,
             async (job) => {
               try {
-                const result = await (
-                  name === "quiz"
-                    ? this.quizzes!
-                    : name === "mindmap"
-                      ? this.mindmaps!
-                      : name === "qa"
-                        ? this.qa!
-                        : this.indexing
-                ).process(job.data.taskId, job.attemptsMade + 1, (progress) =>
-                  job.updateProgress(progress),
+                const result = await this.consumer(name).process(
+                  job.data.taskId,
+                  job.attemptsMade + 1,
+                  (progress) => job.updateProgress(progress),
                 );
                 // 依赖未就绪属于等待而非失败，延迟再处理，不消耗普通错误重试逻辑。
                 if (result === "waiting") {
@@ -142,6 +154,7 @@ export class TaskQueueRuntime implements OnModuleInit, OnModuleDestroy {
         .filter(
           (t) =>
             t.kind !== "rebuild" &&
+            t.kind !== REVIEW_CLASSIFICATION &&
             !(
               t.payload?.engine === "agentic-v1" &&
               t.payload?.foreground &&
@@ -161,30 +174,12 @@ export class TaskQueueRuntime implements OnModuleInit, OnModuleDestroy {
         if (this.config.get("QUEUE_DRIVER") === "memory") {
           if (delay) continue;
           try {
-            await (
-              task.kind === "quiz"
-                ? this.quizzes!
-                : task.kind === "mindmap"
-                  ? this.mindmaps!
-                  : task.kind === "qa"
-                    ? this.qa!
-                    : this.indexing
-            ).process(task.id, task.attempts + 1);
+            await this.consumer(this.queueName(task.kind)).process(task.id, task.attempts + 1);
           } catch {
             /* Durable task status carries the failure; next tick retries. */
           }
         } else {
-          const queue = this.queues.get(
-            task.kind === "quiz"
-              ? "quiz"
-              : task.kind === "mindmap"
-                ? "mindmap"
-                : task.kind === "qa"
-                  ? "qa"
-                  : task.kind === "index"
-                    ? "documents"
-                    : "cleanup",
-          );
+          const queue = this.queues.get(this.queueName(task.kind));
           if (!queue) continue;
           // 任务 ID 加投递代数构成队列标识，普通补投可去重，手动重试可创建新一代队列任务。
           const jobId = "task-" + task.id + "-" + task.dispatchGeneration;

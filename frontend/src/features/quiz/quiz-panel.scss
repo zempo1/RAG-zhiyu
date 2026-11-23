@@ -448,6 +448,37 @@
   box-shadow: 0 0 0 2px #8b5cf620;
   color: light-dark(#51408a, #ece2ff);
 }
+.quiz-question-jump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-block: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+
+  input,
+  button {
+    min-height: 34px;
+    padding: 4px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    background: var(--bg-card);
+    font: inherit;
+  }
+
+  input { width: 5em; }
+  button { cursor: pointer; }
+  input:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+  }
+}
+.quiz-panel.is-fullscreen .quiz-question-jump {
+  width: min(100%, var(--quiz-fullscreen-content, 840px));
+  margin-inline: auto;
+}
 .quiz-bottom-actions {
   display: flex;
   align-items: center;
@@ -689,6 +720,18 @@
   scrollbar-width: thin;
   background: light-dark(#f5f8fc, #101014);
 }
+.quiz-is-review.is-fullscreen {
+  --quiz-fullscreen-content: 840px;
+}
+.quiz-is-review.is-fullscreen .quiz-question,
+.quiz-is-review.is-fullscreen .quiz-results {
+  max-width: var(--quiz-fullscreen-content);
+}
+.quiz-is-review .quiz-question-stem,
+.quiz-is-review .quiz-option-content,
+.quiz-is-review .quiz-source-link {
+  overflow-wrap: anywhere;
+}
 .quiz-panel.is-fullscreen .quiz-panel-footer {
   padding-block: 10px max(12px, env(safe-area-inset-bottom));
 }
@@ -763,6 +806,23 @@
   .quiz-explain,
   .quiz-result-buttons > button,
   .quiz-bottom-actions > button {
+    min-height: 44px;
+  }
+}
+@media (max-width: 1199px), (pointer: coarse) {
+  .quiz-question-jump input,
+  .quiz-question-jump button {
+    min-height: 44px;
+  }
+  .quiz-is-review .quiz-panel-actions > button,
+  .quiz-is-review .quiz-number-nav button {
+    width: 44px;
+    min-height: 44px;
+  }
+  .quiz-is-review .quiz-source-link,
+  .quiz-is-review .quiz-bottom-actions > button,
+  .quiz-is-review .quiz-result-buttons > button,
+  .quiz-is-review .quiz-question-sources > button {
     min-height: 44px;
   }
 }

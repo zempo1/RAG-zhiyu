@@ -2,22 +2,22 @@
   <section
     ref="panel"
     class="quiz-panel"
-    :class="{ 'is-fullscreen': fullscreen }"
+    :class="{ 'is-fullscreen': fullscreen, 'quiz-is-review': isReview }"
     :role="fullscreen ? 'dialog' : 'region'"
     :aria-modal="fullscreen || undefined"
-    aria-label="智能测验答题面板"
+    :aria-label="isReview ? '错题复练答题面板' : '智能测验答题面板'"
     tabindex="-1"
     @keydown="onPanelKey"
   >
     <header class="quiz-panel-header">
       <div class="quiz-panel-heading">
         <span class="quiz-eyebrow"
-          >智能测验 <span aria-hidden="true">/</span>
+          >{{ isReview ? "错题复练" : "智能测验" }} <span aria-hidden="true">/</span>
           {{ attempt?.status === "completed" ? "已完成" : "练习中" }}</span
         >
-        <h2>{{ attempt?.quiz.title || "智能测验" }}</h2>
-        <button v-if="attempt" class="quiz-source-link" @click="openSource()">
-          <el-icon><Document /></el-icon>{{ attempt.quiz.filename }}
+        <h2>{{ heading }}</h2>
+        <button v-if="currentSource && !showResults" class="quiz-source-link" @click="openSource()">
+          <el-icon><Document /></el-icon>{{ currentSource.filename }}
         </button>
       </div>
       <div class="quiz-panel-actions">
@@ -29,28 +29,26 @@
           @click="toggleFullscreen"
         >
           <el-icon><FullScreen /></el-icon></button
-        ><button type="button" aria-label="关闭测验" title="返回工作台" @click="close">
+        ><button
+          type="button"
+          :aria-label="isReview ? '关闭复练' : '关闭测验'"
+          title="返回工作台"
+          @click="close"
+        >
           <el-icon><Close /></el-icon>
         </button>
       </div>
     </header>
-    <div
-      v-if="attempt?.quiz.attempts && attempt.quiz.attempts.length > 1"
-      class="quiz-attempt-history"
-    >
+    <div v-if="quiz?.attempts && quiz.attempts.length > 1" class="quiz-attempt-history">
       <label for="quiz-attempt-history">练习记录</label>
       <select
         id="quiz-attempt-history"
-        :value="attempt.id"
+        :value="attempt?.id"
         :disabled="loading || saving"
         @change="switchAttempt(Number(($event.target as HTMLSelectElement).value))"
       >
-        <option
-          v-for="(record, index) in attempt.quiz.attempts"
-          :key="record.id"
-          :value="record.id"
-        >
-          第 {{ attempt.quiz.attempts.length - index }} 次 ·
+        <option v-for="(record, index) in quiz.attempts" :key="record.id" :value="record.id">
+          第 {{ quiz.attempts.length - index }} 次 ·
           {{
             record.status === "completed"
               ? record.score + " 分"
@@ -60,16 +58,22 @@
         </option>
       </select>
     </div>
-    <p v-if="attempt?.quiz.sourceOutdated" class="quiz-panel-notice">
+    <p v-if="quiz?.sourceOutdated" class="quiz-panel-notice">
       此测验基于历史版本。你可以继续练习和查看解析；AI 讲解需重新生成测验。
     </p>
     <div v-if="loading" class="quiz-panel-status" role="status">
-      <span class="quiz-loading-ring"></span>正在准备你的测验…
+      <span class="quiz-loading-ring"></span
+      >{{ isReview ? "正在准备错题复练…" : "正在准备你的测验…" }}
     </div>
     <div v-else-if="loadFailure" class="quiz-panel-status" role="alert">
-      <h3>暂时无法打开测验</h3>
+      <h3>{{ isReview ? "暂时无法打开复练" : "暂时无法打开测验" }}</h3>
       <p>{{ loadFailure }}</p>
       <button class="quiz-panel-primary" @click="load">重新加载</button>
+    </div>
+    <div v-else-if="attempt?.status === 'invalidated'" class="quiz-panel-status" role="status">
+      <h3>复练来源已失效</h3>
+      <p>部分原题已删除，可以用剩余错题重新开始。</p>
+      <button type="button" class="quiz-panel-primary" @click="close">返回错题整理</button>
     </div>
     <template v-else-if="attempt && question">
       <div class="quiz-progress-heading">
@@ -127,9 +131,10 @@
           </div>
           <div class="quiz-result-buttons">
             <button @click="navigate(0)">查看全部解析</button
-            ><button class="quiz-restart" @click="restartPractice">
+            ><button v-if="!isReview" class="quiz-restart" @click="restartPractice">
               <el-icon><RefreshRight /></el-icon>重新练习
             </button>
+            <button v-else type="button" @click="close">返回错题整理</button>
           </div>
         </section>
         <article v-else class="quiz-question" :key="question.id">
@@ -178,7 +183,8 @@
               <span class="quiz-option-letter">{{ option.id }}</span
               ><span class="quiz-option-content"
                 ><span class="quiz-option-text"
-                  >{{ option.text }} <span
+                  >{{ option.text }}
+                  <span
                     v-if="answer?.submitted && question.correctOptionIds?.includes(option.id)"
                     class="quiz-option-result"
                     ><el-icon><Check /></el-icon>正确答案{{
@@ -208,10 +214,10 @@
               >{{ answer.isCorrect ? "回答正确！" : "再巩固一下这个知识点" }}
             </h4>
             <p>{{ question.explanation }}</p>
-            <div class="quiz-explanation-actions">
+            <div v-if="!isReview" class="quiz-explanation-actions">
               <button
                 class="quiz-explain"
-                :disabled="chatBusy || attempt.quiz.sourceOutdated || !!saveFailure"
+                :disabled="chatBusy || quiz?.sourceOutdated || !!saveFailure"
                 @click="explain"
               >
                 <el-icon><ChatDotRound /></el-icon
@@ -227,7 +233,10 @@
           >
             提交答案
           </button>
-          <div v-if="question.evidence?.length" class="quiz-question-sources">
+          <div
+            v-if="question.evidence?.length && (!isReview || answer?.submitted)"
+            class="quiz-question-sources"
+          >
             <span>依据资料</span
             ><button
               v-for="(source, index) in question.evidence"
@@ -247,7 +256,7 @@
       <footer class="quiz-panel-footer">
         <div class="quiz-number-nav" aria-label="题号导航">
           <button
-            v-for="(item, index) in attempt.questions"
+            v-for="{ item, index } in numberedQuestions"
             :key="item.id"
             :class="{
               current: !showResults && index === currentIndex,
@@ -261,6 +270,15 @@
             {{ index + 1 }}
           </button>
         </div>
+        <form v-if="attempt.totalCount > 20" class="quiz-question-jump" @submit.prevent="jumpToQuestion">
+          <label>
+            跳到
+            <input v-model.number="jumpNumber" type="number" min="1" :max="attempt.totalCount"
+              required aria-label="目标题号" :placeholder="String(currentIndex + 1)" />
+          </label>
+          <span> / {{ attempt.totalCount }} 题</span>
+          <button type="submit">跳转</button>
+        </form>
         <div class="quiz-bottom-actions">
           <button
             :disabled="currentIndex === 0 && !showResults"
@@ -305,12 +323,25 @@ import {
   saveQuizProgress,
   type QuizAttempt,
   type QuizProgress,
+  type QuizQuestion,
   type QuizExplainRequest,
 } from "../../api/quizzes";
+import {
+  getReviewPractice,
+  saveReviewProgress,
+  type ReviewPractice,
+  type ReviewSource,
+} from "../../api/quiz-reviews";
 import type { DocumentTarget } from "../reader/types";
 import type { Citation } from "../../api/knowledge-bases";
 import { buildQuizExplanation } from "./quiz-state";
-const props = defineProps<{ quizId: number; restart?: boolean; chatBusy?: boolean }>();
+const props = defineProps<{
+  quizId?: number;
+  practiceId?: number;
+  restart?: boolean;
+  chatBusy?: boolean;
+  readerOpen?: boolean;
+}>();
 const emit = defineEmits<{
   (e: "close"): void;
   (e: "explain", payload: QuizExplainRequest): void;
@@ -320,7 +351,7 @@ const emit = defineEmits<{
 }>();
 const panel = ref<HTMLElement>(),
   fullscreenButton = ref<HTMLButtonElement>();
-const attempt = ref<QuizAttempt>(),
+const attempt = ref<QuizAttempt | ReviewPractice>(),
   loading = ref(false),
   loadFailure = ref(""),
   saving = ref(false),
@@ -330,7 +361,23 @@ const attempt = ref<QuizAttempt>(),
   currentIndex = ref(0);
 const selections = ref<Record<string, string[]>>({}),
   pendingSubmissions = ref(new Set<string>());
-const question = computed(() => attempt.value?.questions[currentIndex.value]);
+const isReview = computed(() => props.practiceId !== undefined);
+const quiz = computed(() =>
+  attempt.value && "quiz" in attempt.value ? attempt.value.quiz : undefined,
+);
+const review = computed(() =>
+  attempt.value && "mode" in attempt.value ? attempt.value : undefined,
+);
+const question = computed<(QuizQuestion & { source?: ReviewSource }) | undefined>(
+  () => attempt.value?.questions[currentIndex.value],
+);
+const currentSource = computed(() => question.value?.source || quiz.value);
+const heading = computed(() => {
+  if (!isReview.value) return quiz.value?.title || "智能测验";
+  if (!review.value) return "错题复练";
+  const label = review.value.mode === "variant" ? "变式复练" : "原题复练";
+  return review.value.topicLabel ? review.value.topicLabel + " · " + label : label;
+});
 const answer = computed(() =>
   question.value ? attempt.value?.answers[question.value.id] : undefined,
 );
@@ -350,11 +397,24 @@ const wrongQuestions = computed(
           !attempt.value.answers[item.question.id]?.isCorrect,
       ) || [],
 );
+const numberedQuestions = computed(() => {
+  const questions = attempt.value?.questions ?? [];
+  const count = questions.length > 20 ? 7 : questions.length;
+  const start = Math.min(Math.max(0, currentIndex.value - 3), questions.length - count);
+  return questions.slice(start, start + count).map((item, offset) => ({ item, index: start + offset }));
+});
+const jumpNumber = ref<number | string>("");
+function jumpToQuestion() {
+  const index = Number(jumpNumber.value) - 1;
+  if (!Number.isInteger(index) || index < 0 || index >= (attempt.value?.totalCount ?? 0)) return;
+  navigate(index);
+  jumpNumber.value = "";
+}
 const pending: QuizProgress[] = [];
 let savePromise: Promise<boolean> | null = null,
   epoch = 0,
   newAttemptId = crypto.randomUUID();
-function hydrate(value: QuizAttempt) {
+function hydrate(value: QuizAttempt | ReviewPractice) {
   attempt.value = value;
   currentIndex.value = value.currentIndex;
   selections.value = Object.fromEntries(
@@ -367,6 +427,15 @@ async function load() {
   loading.value = true;
   loadFailure.value = "";
   try {
+    if (props.practiceId !== undefined) {
+      const practice = await getReviewPractice(props.practiceId);
+      if (version === epoch) {
+        hydrate(practice);
+        void nextTick(() => panel.value?.focus({ preventScroll: true }));
+      }
+      return;
+    }
+    if (props.quizId === undefined) return;
     const quiz = await getQuiz(props.quizId);
     if (version !== epoch) return;
     const data =
@@ -393,7 +462,9 @@ function flush(): Promise<boolean> {
   savePromise = (async () => {
     while (pending.length) {
       try {
-        const value = await saveQuizProgress(id, pending[0]);
+        const value = await (isReview.value
+          ? saveReviewProgress(id, pending[0])
+          : saveQuizProgress(id, pending[0]));
         if (version !== epoch) return false;
         const saved = pending.shift()!;
         const justCompleted = attempt.value?.status !== "completed" && value.status === "completed";
@@ -405,8 +476,21 @@ function flush(): Promise<boolean> {
           emit("updated");
         }
       } catch (error) {
-        if (version === epoch)
-          saveFailure.value = (error as Error).message || "保存失败，请检查网络";
+        if (version !== epoch) return false;
+        const response = (error as { response?: { status?: number; data?: { message?: string } } })
+          .response;
+        const removed =
+          response?.status === 404 ||
+          (response?.status === 409 && response.data?.message?.includes("复练来源已失效"));
+        if (review.value && removed) {
+          pending.length = 0;
+          pendingSubmissions.value.clear();
+          hydrate({ ...review.value, status: "invalidated", questions: [], answers: {} });
+          emit("updated");
+          return true;
+        }
+        saveFailure.value =
+          response?.data?.message || (error as Error).message || "保存失败，请检查网络";
         return false;
       }
     }
@@ -470,6 +554,7 @@ async function close() {
   }
 }
 async function restartPractice() {
+  if (props.quizId === undefined) return;
   if (!(await requestLeave())) return;
   loading.value = true;
   loadFailure.value = "";
@@ -538,41 +623,55 @@ function explain() {
     !question.value ||
     !answer.value?.submitted ||
     props.chatBusy ||
-    attempt.value.quiz.sourceOutdated
+    !quiz.value ||
+    quiz.value.sourceOutdated
   )
     return;
   emit("explain", {
     attemptId: attempt.value.id,
     questionId: question.value.id,
-    documentId: attempt.value.quiz.documentId,
-    knowledgeBaseId: attempt.value.quiz.knowledgeBaseId,
+    documentId: quiz.value.documentId,
+    knowledgeBaseId: quiz.value.knowledgeBaseId,
     question: buildQuizExplanation(question.value, answer.value),
   });
 }
 function openSource(index?: number) {
-  if (!attempt.value) return;
-  const quiz = attempt.value.quiz,
-    source = index === undefined ? undefined : question.value?.evidence[index];
+  const document = currentSource.value;
+  const knowledgeBaseId = review.value?.knowledgeBaseId || quiz.value?.knowledgeBaseId;
+  if (!document || !knowledgeBaseId) return;
+  const source = index === undefined ? undefined : question.value?.evidence[index];
   const citation: Citation | undefined = source
     ? {
         number: (index || 0) + 1,
-        documentId: quiz.documentId,
-        knowledgeBaseId: quiz.knowledgeBaseId,
-        versionId: quiz.versionId,
-        indexRevisionId: quiz.indexRevisionId,
+        documentId: document.documentId,
+        knowledgeBaseId,
+        versionId: document.versionId,
+        indexRevisionId: document.indexRevisionId,
         chunkId: source.chunkId,
-        filename: quiz.filename,
+        filename: document.filename,
         text: source.quote,
         score: 0,
-        sourceOutdated: quiz.sourceOutdated,
+        sourceOutdated: document.sourceOutdated,
         location: source.location as Citation["location"],
       }
     : undefined;
   exitFullscreen();
-  emit("open-source", { documentId: quiz.documentId, versionId: quiz.versionId, citation });
+  emit("open-source", { documentId: document.documentId, versionId: document.versionId, citation });
 }
+let scrollBeforeReader = 0;
 watch(
-  () => props.quizId,
+  () => props.readerOpen,
+  async (open) => {
+    if (open) {
+      scrollBeforeReader = panel.value?.querySelector(".quiz-panel-scroll")?.scrollTop || 0;
+      return;
+    }
+    await nextTick();
+    panel.value?.querySelector(".quiz-panel-scroll")?.scrollTo({ top: scrollBeforeReader });
+  },
+);
+watch(
+  () => [props.quizId, props.practiceId],
   () => {
     pending.length = 0;
     pendingSubmissions.value.clear();
@@ -591,7 +690,7 @@ defineExpose({
   requestLeave,
   restartPractice,
   exitFullscreen,
-  documentId: () => attempt.value?.quiz.documentId,
+  documentId: () => currentSource.value?.documentId,
 });
 </script>
 <style lang="scss" src="./quiz-panel.scss"></style>

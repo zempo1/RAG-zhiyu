@@ -6,6 +6,9 @@ export interface Row {
 export interface EntityMap {
   quizzes: import("../modules/quizzes/entities/quiz.entity").Quiz;
   quizAttempts: import("../modules/quizzes/entities/quiz.entity").QuizAttempt;
+  quizWrongItems: import("../modules/quizzes/entities/quiz-review.entity").QuizWrongItem;
+  quizReviewPractices: import("../modules/quizzes/entities/quiz-review.entity").QuizReviewPractice;
+  quizReviewCategories: import("../modules/quizzes/entities/quiz-review.entity").QuizReviewCategory;
   modelSettings: import("../modules/model-settings/model-setting.entity").ModelSetting;
   agentCheckpoints: import("./agent-checkpoint.persistence").AgentCheckpoint;
   agentCheckpointWrites: import("./agent-checkpoint.persistence").AgentCheckpointWrite;

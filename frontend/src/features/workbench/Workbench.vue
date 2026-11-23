@@ -1,5 +1,15 @@
 <template>
-  <aside class="workbench" :class="{ collapsed: isCollapsed }">
+  <aside
+    ref="panel"
+    class="workbench"
+    :class="{ collapsed: isCollapsed, 'review-is-active': activeTab === 'review',
+      'review-is-fullscreen': props.reviewFullscreen }"
+    :role="props.reviewFullscreen ? 'dialog' : undefined"
+    :aria-modal="props.reviewFullscreen || undefined"
+    :aria-label="props.reviewFullscreen ? '错题整理全屏' : undefined"
+    :tabindex="props.reviewFullscreen ? -1 : undefined"
+    @keydown.esc="exitReviewFullscreen"
+  >
     <!-- 折叠状态 -->
     <div v-if="isCollapsed" class="collapsed-strip" @click="isCollapsed = false">
       <el-tooltip content="展开工作台" placement="left">
@@ -12,7 +22,7 @@
 
     <template v-else>
       <!-- 标题栏 -->
-      <div class="wb-header">
+      <div v-if="!props.reviewFullscreen" class="wb-header">
         <div class="wb-title">
           <el-icon class="wb-title-icon"><Grid /></el-icon>
           <span>工作台</span>
@@ -25,16 +35,18 @@
       </div>
 
       <!-- Tab -->
-      <div class="wb-tabs">
-        <div
+      <div v-if="!props.reviewFullscreen" class="wb-tabs" role="group" aria-label="工作台功能">
+        <button
           v-for="tab in tabs"
           :key="tab.key"
+          type="button"
           class="wb-tab"
           :class="{ active: activeTab === tab.key }"
+          :aria-pressed="activeTab === tab.key"
           @click="activeTab = tab.key"
         >
           <span>{{ tab.label }}</span>
-        </div>
+        </button>
       </div>
 
       <!-- ===== 思维导图 ===== -->
@@ -104,25 +116,16 @@
         :active="props.active"
         @open="(id, restart) => emit('open-quiz', id, restart)"
       />
-      <!-- ===== 文档大纲 ===== -->
-      <template v-else-if="activeTab === 'outline'">
-        <GenerateSection
-          :file-name="uploadedFileName"
-          :icon="List"
-          button-text="生成文档大纲"
-          :loading="outlineGenerating"
-          :disabled="!uploadedFileName || !props.uploadedDocumentId"
-          @generate="handleGenerate('OUTLINE')"
-        />
-        <div class="wb-divider" />
-        <AnalysisList
-          :items="outlines"
-          :loading="outlineLoading"
-          empty-text="暂无大纲记录"
-          @export="exportMarkdown"
-          @delete="handleDeleteAnalysis"
-        />
-      </template>
+      <ReviewWorkbench
+        v-else-if="activeTab === 'review'"
+        ref="reviewWorkspaceRef"
+        :knowledge-base-id="knowledgeBaseId"
+        :active="props.active"
+        @open-practice="(id) => emit('open-review', id)"
+        :fullscreen="props.reviewFullscreen"
+        @fullscreen-change="emit('review-fullscreen-change', $event)"
+        @open-source="(target) => emit('open-source', target)"
+      />
 
       <!-- ===== 学习卡片 ===== -->
       <template v-else-if="activeTab === 'flashcard'">
@@ -157,8 +160,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount, type Ref, computed } from "vue";
-import { ArrowLeft, ArrowRight, Grid, Connection, List, Memo } from "@element-plus/icons-vue";
+import { ref, watch, onBeforeUnmount, type Ref, computed, nextTick } from "vue";
+import { ArrowLeft, ArrowRight, Grid, Connection, Memo } from "@element-plus/icons-vue";
 import { getTask, retryTask } from "../../api/knowledge-bases";
 import type { ProcessingTask } from "../../api/knowledge-bases";
 import request from "../../utils/request";
@@ -166,7 +169,8 @@ import FlashcardViewer from "../flashcard/FlashcardViewer.vue";
 import QuizWorkbench from "../quiz/QuizWorkbench.vue";
 import GenerateSection from "./components/GenerateSection/GenerateSection.vue";
 import HistoryList from "./components/HistoryList/HistoryList.vue";
-import AnalysisList from "./components/AnalysisList/AnalysisList.vue";
+import ReviewWorkbench from "../quiz/ReviewWorkbench.vue";
+import type { DocumentTarget } from "../reader/types";
 import {
   generateMindMap,
   getMindMapWorkspace,
@@ -189,26 +193,32 @@ const props = defineProps<{
   knowledgeBaseId?: number | null;
   active?: boolean;
   collapsed?: boolean;
+  reviewFullscreen?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: "open-mindmap", id: number): void;
   (e: "update:collapsed", value: boolean): void;
   (e: "open-quiz", id: number, restart?: boolean): void;
+  (e: "open-review", id: number): void;
+  (e: "review-fullscreen-change", value: boolean): void;
+  (e: "open-source", target: DocumentTarget): void;
 }>();
 const toast = useToast();
 const confirm = useConfirm();
 
 const tabs: {
-  key: "mindmap" | "quiz" | "outline" | "flashcard";
+  key: "mindmap" | "flashcard" | "quiz" | "review";
   label: string;
 }[] = [
   { key: "mindmap", label: "思维导图" },
-  { key: "quiz", label: "智能测验" },
-  { key: "outline", label: "文档大纲" },
   { key: "flashcard", label: "学习卡片" },
+  { key: "quiz", label: "智能测验" },
+  { key: "review", label: "错题整理" },
 ];
-const activeTab = ref<"mindmap" | "quiz" | "outline" | "flashcard">("mindmap");
+const activeTab = ref<"mindmap" | "flashcard" | "quiz" | "review">("mindmap");
+const reviewWorkspaceRef = ref<InstanceType<typeof ReviewWorkbench>>();
+const panel = ref<HTMLElement>();
 const quizWorkspaceRef = ref<InstanceType<typeof QuizWorkbench>>();
 const localCollapsed = ref(false);
 const isCollapsed = computed({
@@ -218,6 +228,21 @@ const isCollapsed = computed({
     emit("update:collapsed", value);
   },
 });
+function exitReviewFullscreen(event: KeyboardEvent) {
+  if (props.reviewFullscreen && !event.defaultPrevented) {
+    event.preventDefault();
+    emit("review-fullscreen-change", false);
+  }
+}
+watch(
+  () => props.reviewFullscreen,
+  async (active) => {
+    if (!active) return;
+    await nextTick();
+    if (props.reviewFullscreen && !panel.value?.contains(document.activeElement))
+      panel.value?.focus({ preventScroll: true });
+  },
+);
 
 // 思维导图
 const mindmapGenerating = ref(false);
@@ -303,11 +328,6 @@ const summaryGenerating = ref(false);
 const summaryLoading = ref(false);
 const summaries = ref<DocumentAnalysis[]>([]);
 
-// 大纲
-const outlineGenerating = ref(false);
-const outlineLoading = ref(false);
-const outlines = ref<DocumentAnalysis[]>([]);
-
 // 学习卡片
 const flashcardGenerating = ref(false);
 const flashcardLoading = ref(false);
@@ -362,10 +382,9 @@ function createTabLoader<T>(
 const loaders = {
   mindmap: createTabLoader(mindmapLoading, mindMaps, fetchWorkspace),
   summary: createTabLoader(summaryLoading, summaries, () => fetchAnalyses("SUMMARY")),
-  outline: createTabLoader(outlineLoading, outlines, () => fetchAnalyses("OUTLINE")),
   flashcard: createTabLoader(flashcardLoading, flashcards, () => fetchAnalyses("FLASHCARD")),
 };
-function fetchAnalyses(type: "SUMMARY" | "OUTLINE" | "FLASHCARD") {
+function fetchAnalyses(type: "SUMMARY" | "FLASHCARD") {
   return props.knowledgeBaseId === null
     ? Promise.resolve([])
     : getAnalyses(type, props.knowledgeBaseId);
@@ -373,7 +392,6 @@ function fetchAnalyses(type: "SUMMARY" | "OUTLINE" | "FLASHCARD") {
 let libraryRevision = 0;
 const loadMindMaps = loaders.mindmap.load;
 const loadSummaries = loaders.summary.load;
-const loadOutlines = loaders.outline.load;
 const refreshTab = (tab: keyof typeof loaders) => {
   if (tab === "mindmap") workspaceRevision++;
   loaders[tab].invalidate();
@@ -384,7 +402,7 @@ const refreshTab = (tab: keyof typeof loaders) => {
 watch(
   activeTab,
   (tab) => {
-    if (tab !== "quiz") void loaders[tab].ensure();
+    if (tab !== "quiz" && tab !== "review") void loaders[tab].ensure();
   },
   { immediate: true },
 );
@@ -429,15 +447,14 @@ const handleDeleteMindMap = async (map: MindMap) => {
   }
 };
 
-// 摘要/大纲操作
-const handleGenerate = async (type: "SUMMARY" | "OUTLINE" | "FLASHCARD") => {
+// 学习卡片生成与分析记录删除
+const handleGenerate = async (type: "SUMMARY" | "FLASHCARD") => {
   if (!props.uploadedDocumentId) {
     toast.error("请先选择文件");
     return;
   }
   const revision = libraryRevision;
   if (type === "SUMMARY") summaryGenerating.value = true;
-  else if (type === "OUTLINE") outlineGenerating.value = true;
   else flashcardGenerating.value = true;
   try {
     const result = await generateAnalysis(props.uploadedDocumentId, type);
@@ -445,9 +462,6 @@ const handleGenerate = async (type: "SUMMARY" | "OUTLINE" | "FLASHCARD") => {
     if (type === "SUMMARY") {
       toast.success("AI 摘要生成成功！");
       await refreshTab("summary");
-    } else if (type === "OUTLINE") {
-      toast.success("文档大纲生成成功！");
-      await refreshTab("outline");
     } else {
       toast.success("学习卡片生成成功！");
       await refreshTab("flashcard");
@@ -462,7 +476,6 @@ const handleGenerate = async (type: "SUMMARY" | "OUTLINE" | "FLASHCARD") => {
   } finally {
     if (revision === libraryRevision) {
       if (type === "SUMMARY") summaryGenerating.value = false;
-      else if (type === "OUTLINE") outlineGenerating.value = false;
       else flashcardGenerating.value = false;
     }
   }
@@ -472,11 +485,9 @@ const handleDeleteAnalysis = async (item: DocumentAnalysis) => {
   if (!ok) return;
   try {
     await apiDeleteAnalysis(item.id);
-    const tab =
-      item.type === "SUMMARY" ? "summary" : item.type === "OUTLINE" ? "outline" : "flashcard";
+    const tab = item.type === "SUMMARY" ? "summary" : "flashcard";
     loaders[tab].invalidate();
     summaries.value = summaries.value.filter((s) => s.id !== item.id);
-    outlines.value = outlines.value.filter((o) => o.id !== item.id);
     flashcards.value = flashcards.value.filter((f) => f.id !== item.id);
     toast.success("已删除");
   } catch (e) {
@@ -484,21 +495,6 @@ const handleDeleteAnalysis = async (item: DocumentAnalysis) => {
     toast.error("删除失败");
   }
 };
-
-function exportMarkdown(item: DocumentAnalysis) {
-  const typeLabel = item.type === "SUMMARY" ? "AI摘要" : "文档大纲";
-  const header = `# ${typeLabel} — ${item.documentName}\n\n> 生成时间：${new Date(item.createdAt).toLocaleString("zh-CN")}\n\n---\n\n`;
-  const blob = new Blob([header + item.content], {
-    type: "text/markdown;charset=utf-8",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${item.documentName}_${typeLabel}_${item.id}.md`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast.success("已导出为 Markdown 文件");
-}
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
@@ -518,7 +514,6 @@ const openFlashcard = (item: DocumentAnalysis) => {
 const onSourceDeleted = async (documentId: number) => {
   mindMaps.value = mindMaps.value.filter((item) => item.documentId !== documentId);
   summaries.value = summaries.value.filter((item) => item.documentId !== documentId);
-  outlines.value = outlines.value.filter((item) => item.documentId !== documentId);
   flashcards.value = flashcards.value.filter((item) => item.documentId !== documentId);
   generationTasks.value = generationTasks.value.filter((t) => t.documentId !== documentId);
   if (currentFlashcard.value?.documentId === documentId) {
@@ -531,9 +526,9 @@ const onSourceDeleted = async (documentId: number) => {
 const refresh = () => {
   workspaceRevision++;
   Object.values(loaders).forEach((loader) => loader.invalidate());
-  return activeTab.value === "quiz"
-    ? quizWorkspaceRef.value?.refresh()
-    : loaders[activeTab.value].ensure();
+  if (activeTab.value === "quiz") return quizWorkspaceRef.value?.refresh();
+  if (activeTab.value === "review") return reviewWorkspaceRef.value?.refresh();
+  return loaders[activeTab.value].ensure();
 };
 watch(
   () => props.uploadedDocumentId,
@@ -553,13 +548,13 @@ watch(
 
     mindMaps.value = [];
     summaries.value = [];
-    outlines.value = [];
     flashcards.value = [];
     currentFlashcard.value = null;
     flashcardViewerVisible.value = false;
-    summaryGenerating.value = outlineGenerating.value = flashcardGenerating.value = false;
+    summaryGenerating.value = flashcardGenerating.value = false;
     Object.values(loaders).forEach((loader) => loader.invalidate());
-    if (activeTab.value !== "quiz") void loaders[activeTab.value].ensure();
+    if (activeTab.value !== "quiz" && activeTab.value !== "review")
+      void loaders[activeTab.value].ensure();
   },
 );
 watch(
@@ -630,7 +625,6 @@ onBeforeUnmount(() => {
 defineExpose({
   loadMindMaps,
   loadSummaries,
-  loadOutlines,
   onSourceDeleted,
   refresh,
 });

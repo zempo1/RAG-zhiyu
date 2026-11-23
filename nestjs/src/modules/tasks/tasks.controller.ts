@@ -1,7 +1,7 @@
 import { Controller, Delete, Get, Param, Post, Query } from "@nestjs/common";
 import { Type } from "class-transformer";
 import { IsInt, Min } from "class-validator";
-import { TasksService } from "./tasks.service";
+import { REVIEW_CLASSIFICATION, TasksService } from "./tasks.service";
 import { UserId } from "../auth/auth.guard";
 import { IdPipe } from "../../common/pipes/id.pipe";
 import { AgentQaTasksService } from "./agent-qa.service";
@@ -16,7 +16,7 @@ export class TasksController {
     private readonly agentTasks: AgentQaTasksService,
   ) {}
   @Post(":id/cancel") async cancel(@UserId() user: number, @Param("id", IdPipe) id: number) {
-    if (["mindmap", "quiz"].includes((await this.tasks.get(id, user)).kind))
+    if (["mindmap", "quiz", REVIEW_CLASSIFICATION].includes((await this.tasks.get(id, user)).kind))
       return this.tasks.cancelMindMap(id, user);
     return this.agentTasks.cancel(id, user);
   }

@@ -13,6 +13,7 @@ import { embeddingFingerprint } from "../vector-store/qdrant-vector-store.servic
 import { ApiError } from "../../common/api-error";
 import { sealRuntimeModels } from "../model-settings/model-runtime";
 import { expandCitationContext } from "./citation-context";
+import { clearQuizReviews } from "../quizzes/quiz-review-state";
 
 export interface IngestOptions {
   knowledgeBaseId?: number;
@@ -444,6 +445,7 @@ export class DocumentsService {
     for (const quiz of await tx.list("quizzes", { documentId: doc.id })) {
       for (const attempt of await tx.list("quizAttempts", { quizId: quiz.id }))
         await tx.delete("quizAttempts", attempt.id);
+      await clearQuizReviews(tx, quiz);
       await tx.delete("quizzes", quiz.id);
     }
     for (const table of ["analyses", "mindmaps"] as const)
@@ -487,6 +489,31 @@ export class DocumentsService {
       for (const doc of await tx.list("documents", { knowledgeBaseId: kbId, userId })) {
         await tx.lock("documents", doc.id);
         if (!doc.deletedAt) await this.tombstone(tx, doc);
+      }
+      for (const review of await tx.list("quizReviewPractices", { knowledgeBaseId: kbId, userId }))
+        await tx.delete("quizReviewPractices", review.id);
+      for (const wrong of await tx.list("quizWrongItems", { knowledgeBaseId: kbId, userId }))
+        await tx.delete("quizWrongItems", wrong.id);
+      for (const category of await tx.list("quizReviewCategories", {
+        knowledgeBaseId: kbId,
+        userId,
+      }))
+        await tx.delete("quizReviewCategories", category.id);
+      for (const task of await tx.list("tasks", {
+        knowledgeBaseId: kbId,
+        userId,
+        kind: "quiz_review_classification",
+      })) {
+        if (!terminalTask(task.status))
+          await tx.save("tasks", {
+            id: task.id,
+            status: "canceled",
+            stage: "canceled",
+            executionToken: null,
+            retryable: 0,
+            payload: { ...task.payload, credential: null, modelSnapshot: null, leaseUntil: null },
+            updatedAt: now(),
+          });
       }
       await tx.save("knowledgeBases", {
         id: kbId,

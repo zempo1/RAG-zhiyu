@@ -8,6 +8,7 @@ const result = (id: number) =>
       {
         type: "SINGLE",
         stem: "测试知识点",
+        knowledgePoint: "测试原文",
         options: ["A", "B", "C", "D"].map((id) => ({ id, text: `选项${id}` })),
         correctOptionIds: ["A"],
         explanation: "解释",

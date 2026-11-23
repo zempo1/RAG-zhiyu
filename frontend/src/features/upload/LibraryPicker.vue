@@ -1,28 +1,17 @@
 <template>
   <section class="library-picker knowledge-theme">
-    <el-select
+    <KnowledgeSelect
       :model-value="knowledgeBaseId"
+      :options="libraryOptions"
       placeholder="选择知识库"
       :disabled="uploading"
-      popper-class="knowledge-theme knowledge-popper library-options"
-      :show-arrow="false"
-      @change="emit('change', $event)"
+      @update:model-value="emit('change', $event)"
       :title="currentLibrary?.name"
     >
       <template #prefix
         ><el-icon><Collection /></el-icon
       ></template>
-      <el-option v-for="kb in libraries" :key="kb.id" :label="kb.name" :value="kb.id"
-        ><span class="library-option-name">{{ kb.name }}</span
-        ><el-icon v-if="kb.id === knowledgeBaseId" class="library-option-check"><Check /></el-icon
-      ></el-option>
-      <el-option
-        v-if="knowledgeBaseId && !currentLibrary"
-        :value="knowledgeBaseId"
-        label="已删除知识库（历史会话）"
-        disabled
-      />
-    </el-select>
+    </KnowledgeSelect>
     <div class="picker-actions">
       <el-button class="manage-button" :disabled="!currentLibrary" @click="emit('manage')"
         ><el-icon><FolderOpened /></el-icon>管理文档</el-button
@@ -54,15 +43,24 @@
   </section>
 </template>
 <script setup lang="ts">
-import { Collection, FolderOpened, Plus, Document, Check, Close } from "@element-plus/icons-vue";
+import { computed } from "vue";
+import { Collection, FolderOpened, Plus, Document, Close } from "@element-plus/icons-vue";
+import KnowledgeSelect from "../../components/KnowledgeSelect.vue";
 import type { KnowledgeBase, ManagedDocument } from "../../api/knowledge-bases";
-defineProps<{
+const props = defineProps<{
   knowledgeBaseId: number | null;
   libraries: KnowledgeBase[];
   currentLibrary?: KnowledgeBase;
   selectedDocument: ManagedDocument | null;
   uploading: boolean;
 }>();
+const libraryOptions = computed(() => {
+  const options: Array<{ value: number; label: string; disabled?: boolean }> =
+    props.libraries.map(({ id, name }) => ({ value: id, label: name }));
+  if (props.knowledgeBaseId && !props.currentLibrary)
+    options.push({ value: props.knowledgeBaseId, label: "已删除知识库（历史会话）", disabled: true });
+  return options;
+});
 const emit = defineEmits<{
   (e: "change", id: number): void;
   (e: "manage"): void;
