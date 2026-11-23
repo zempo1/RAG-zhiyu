@@ -2,7 +2,7 @@ import PDFDocument from "pdfkit";
 import { DocumentParser } from "../src/modules/documents/parsers/document.parser";
 import { RecursiveChunker } from "../src/modules/documents/chunkers/recursive.chunker";
 import { ParsedDocument, paragraphBlocks } from "../src/modules/documents/parsers/parsed-document";
-import { splitNativeTableBlocks } from "../src/modules/documents/parsers/pdf-table-layout";
+import { splitNativeTableBlocks } from "../src/modules/documents/parsers/pdf/layout/pdf-table-layout";
 
 type Variant =
   | "continued"

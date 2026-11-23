@@ -4,11 +4,11 @@ import { ConfigService } from "@nestjs/config";
 import { DocumentsService } from "../documents/documents.service";
 import { LlmService } from "../llm/llm.service";
 import { Store, Row, publicRow } from "../../persistence/store";
-import { summaryPrompt } from "./prompts";
+import { summaryPrompt } from "./generation/prompts";
 import { isAnalysisType } from "./dto/analysis-type.dto";
 import { ApiError } from "../../common/api-error";
 import { TokenizerService } from "../embeddings/tokenizer.service";
-import { generateFlashcards } from "./flashcard-generation";
+import { generateFlashcards } from "./generation/flashcard-generation";
 
 @Injectable()
 export class AnalysisService {

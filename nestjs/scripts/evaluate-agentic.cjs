@@ -153,7 +153,7 @@ async function main(argv = process.argv.slice(2)) {
   for (const file of [
     "config/configuration.js",
     "modules/agent/agent.service.js",
-    "modules/rag/retrieval.service.js",
+    "modules/rag/retrieval/retrieval.service.js",
   ]) {
     try {
       await fs.access(path.join(build, file));
@@ -325,19 +325,19 @@ async function main(argv = process.argv.slice(2)) {
     const { TasksService } = load("modules/tasks/tasks.service");
     const { DocumentsService } = load("modules/documents/documents.service");
     const { DocumentParser } = load("modules/documents/parsers/document.parser");
-    const { IndexingService } = load("modules/documents/indexing.service");
+    const { IndexingService } = load("modules/documents/indexing/indexing.service");
     const { RecursiveChunker } = load("modules/documents/chunkers/recursive.chunker");
     const { EmbeddingsService } = load("modules/embeddings/embeddings.service");
     const { TokenizerService } = load("modules/embeddings/tokenizer.service");
     const { InMemoryVectorStore } = load("modules/vector-store/in-memory-vector-store.service");
-    const { QualityModelsService } = load("modules/rag/quality-models.service");
-    const { RetrievalService } = load("modules/rag/retrieval.service");
+    const { QualityModelsService } = load("modules/rag/retrieval/quality-models.service");
+    const { RetrievalService } = load("modules/rag/retrieval/retrieval.service");
     const { RagService } = load("modules/rag/rag.service");
     const { SummaryService } = load("modules/rag/summary.service");
     const { AgentService } = load("modules/agent/agent.service");
     const { LlmService } = load("modules/llm/llm.service");
-    const { normalizeCitations, NO_CONTEXT_ANSWER } = load("modules/rag/citations");
-    const { tokenize } = load("modules/rag/retrieval-algorithms");
+    const { normalizeCitations, NO_CONTEXT_ANSWER } = load("modules/rag/citations/citations");
+    const { tokenize } = load("modules/rag/retrieval/retrieval-algorithms");
     const store = new MemoryStore(),
       libraries = new KnowledgeBasesService(store),
       tasks = new TasksService(store, libraries);

@@ -3,7 +3,7 @@ import {
   renderPdfRegion,
   withPdfPageRaster,
   verifyCachedPdfImage,
-} from "../src/modules/documents/parsers/pdf-render-cache";
+} from "../src/modules/documents/parsers/pdf/cache/pdf-render-cache";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

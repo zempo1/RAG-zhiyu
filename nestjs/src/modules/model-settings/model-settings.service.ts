@@ -12,7 +12,7 @@ import {
   ModelRole,
   ModelRuntimeSnapshot,
   normalizedModelUrl,
-} from "./model-runtime";
+} from "./runtime/model-runtime";
 
 export interface SaveModelSetting {
   provider: Exclude<ModelProvider, "local">;

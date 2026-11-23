@@ -6,13 +6,12 @@ import { MemoryStore } from "../src/persistence/memory.store";
 import {
   DocumentOriginalsService,
   byteRange,
-} from "../src/modules/documents/document-originals.service";
+} from "../src/modules/documents/originals/document-originals.service";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
-import { DocumentsController } from "../src/modules/documents/documents.controller";
+import { DocumentAssetsController } from "../src/modules/documents/originals/document-assets.controller";
 import { DocumentsService } from "../src/modules/documents/documents.service";
-import { ChunkUploadService } from "../src/modules/documents/chunk-upload.service";
-import { PageAssetsService } from "../src/modules/documents/page-assets.service";
+import { PageAssetsService } from "../src/modules/documents/originals/page-assets.service";
 import { configureApp } from "../src/bootstrap";
 
 let root: string, store: MemoryStore, originals: DocumentOriginalsService;
@@ -98,10 +97,9 @@ it("serves byte ranges including open and suffix ranges without reading all byte
 
 it("returns raw private PDF bytes, HEAD headers and partial content through the real controller", async () => {
   const module = await Test.createTestingModule({
-    controllers: [DocumentsController],
+    controllers: [DocumentAssetsController],
     providers: [
       { provide: DocumentsService, useValue: {} },
-      { provide: ChunkUploadService, useValue: {} },
       { provide: PageAssetsService, useValue: {} },
       { provide: DocumentOriginalsService, useValue: originals },
     ],

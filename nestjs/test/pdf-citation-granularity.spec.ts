@@ -1,12 +1,12 @@
-import { RetrievalService } from "../src/modules/rag/retrieval.service";
-import { normalizeCitations } from "../src/modules/rag/citations";
-import type { OriginalEvidence } from "../src/modules/rag/retrieval.types";
+import { RetrievalService } from "../src/modules/rag/retrieval/retrieval.service";
+import { normalizeCitations } from "../src/modules/rag/citations/citations";
+import type { OriginalEvidence } from "../src/modules/rag/retrieval/retrieval.types";
 import { ConfigService } from "@nestjs/config";
 import { MemoryStore } from "../src/persistence/memory.store";
 import { KnowledgeBasesService } from "../src/modules/knowledge-bases/knowledge-bases.service";
 import { SummaryService } from "../src/modules/rag/summary.service";
-import { AgentTools } from "../src/modules/agent/agent-tools";
-import { verifiedSummaryResult } from "../src/modules/agent/agent-summary-result";
+import { AgentTools } from "../src/modules/agent/tools/agent-tools";
+import { verifiedSummaryResult } from "../src/modules/agent/evidence/agent-summary-result";
 import { HistoryService } from "../src/modules/history/history.service";
 
 const retrieval = new RetrievalService({} as any, {} as any, {} as any, {} as any);

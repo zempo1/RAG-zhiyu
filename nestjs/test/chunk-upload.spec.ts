@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { pipeline } from "./helpers/pipeline";
-import { ChunkUploadService } from "../src/modules/documents/chunk-upload.service";
+import { ChunkUploadService } from "../src/modules/documents/upload/chunk-upload.service";
 import { DocumentParser } from "../src/modules/documents/parsers/document.parser";
 
 describe("resumable upload resource boundaries and persistent idempotency", () => {

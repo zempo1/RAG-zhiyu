@@ -1,8 +1,8 @@
-/** 实现业务处理；所属能力：接收问答请求，连接 RAG 与模型，发送流式事件并保存会话。 */
+/** 准备问答证据，并生成同步或流式回答。 */
 import { Injectable, Inject } from "@nestjs/common";
 import { AgentService } from "../agent/agent.service";
 import { LlmService } from "../llm/llm.service";
-import { Citation, normalizeCitations, NO_CONTEXT_ANSWER } from "../rag/citations";
+import { Citation, normalizeCitations, NO_CONTEXT_ANSWER } from "../rag/citations/citations";
 export type AnswerEvent =
   | { type: "sources"; sources: Citation[] }
   | { type: "message"; text: string }

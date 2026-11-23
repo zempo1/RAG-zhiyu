@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MemoryStore } from "../src/persistence/memory.store";
-import { PageAssetsService } from "../src/modules/documents/page-assets.service";
+import { PageAssetsService } from "../src/modules/documents/originals/page-assets.service";
 
 it("authorizes region images and validates region identifiers", async () => {
   const region: any = { versionId: 3, page: 1, profile, regionId: "b".repeat(24) };

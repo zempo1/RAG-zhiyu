@@ -109,7 +109,7 @@ describe("测验与已有任务、文档生命周期集成", () => {
           await p.documents.ingest(Buffer.from("更新原文知识点"), "quiz.md", 1, {
             documentId: file.documentId,
           });
-        if (action === "cancel") await p.tasks.cancelMindMap(accepted.taskId, 1);
+        if (action === "cancel") await p.tasks.cancel(accepted.taskId, 1);
         release();
         await run;
         expect(await p.store.list("quizzes")).toHaveLength(0);
@@ -146,7 +146,7 @@ describe("测验与已有任务、文档生命周期集成", () => {
       await service.process(first.taskId);
       expect((await p.tasks.get(first.taskId, 1)).status).toBe("failed");
       expect((await p.tasks.retry(first.taskId, 1)).dispatchGeneration).toBe(1);
-      await p.tasks.cancelMindMap(first.taskId, 1);
+      await p.tasks.cancel(first.taskId, 1);
       await expect(p.tasks.retry(first.taskId, 1)).rejects.toThrow();
     } finally {
       await p.cleanup();

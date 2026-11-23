@@ -1,4 +1,4 @@
-import { AgentBudget } from "../src/modules/agent/agent-budget";
+import { AgentBudget } from "../src/modules/agent/graph/agent-budget";
 describe("AgentBudget", () => {
   it("persists reservations before requests and conservatively charges missing usage on resume", async () => {
     const checkpoints: any[] = [];

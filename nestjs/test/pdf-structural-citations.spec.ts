@@ -1,9 +1,9 @@
-import { RetrievalService } from "../src/modules/rag/retrieval.service";
-import type { OriginalEvidence } from "../src/modules/rag/retrieval.types";
-import { withoutSourceGeometry } from "../src/modules/documents/parsers/source-anchors";
+import { RetrievalService } from "../src/modules/rag/retrieval/retrieval.service";
+import type { OriginalEvidence } from "../src/modules/rag/retrieval/retrieval.types";
+import { withoutSourceGeometry } from "../src/modules/documents/parsers/pdf/layout/source-anchors";
 import { MemoryStore } from "../src/persistence/memory.store";
 import { KnowledgeBasesService } from "../src/modules/knowledge-bases/knowledge-bases.service";
-import { AgentService } from "../src/modules/agent/agent.service";
+import { overviewCovered } from "../src/modules/agent/evidence/agent-evidence";
 import { HistoryService } from "../src/modules/history/history.service";
 
 const retrieval = new RetrievalService({} as any, {} as any, {} as any, {} as any);
@@ -149,18 +149,11 @@ it("checks exact internal ranges for full coverage and preserves them in histori
     session = await service.open(scope);
   const raw = await service.read(session, { documentId: doc.id });
   const packed = await service.pack(raw.evidence, 10000);
-  const agent = new AgentService(
-    service,
-    {} as any,
-    {} as any,
-    { get: () => undefined } as any,
-    store,
-  );
-  expect(await (agent as any).overviewCovered({ scope }, packed.sources, {})).toBe(true);
+  expect(overviewCovered(scope, packed.sources, session)).toBe(true);
   const incomplete = structuredClone(packed.sources);
   const employer = incomplete.find((s) => s.text.includes("骨架屏"))!;
   employer.sourceSegments = employer.sourceSegments!.filter((s) => !s.text.includes("骨架屏"));
-  expect(await (agent as any).overviewCovered({ scope }, incomplete, {})).toBe(false);
+  expect(overviewCovered(scope, incomplete, session)).toBe(false);
   const history = new HistoryService(store, libraries),
     chat = await history.create("test", 1, kb.id);
   await history.addMessage(chat.id, 1, "assistant", "实习技术亮点[1]", [packed.sources[0]]);

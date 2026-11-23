@@ -2,7 +2,7 @@ import { createServer, Server } from "node:http";
 import { AddressInfo } from "node:net";
 import { ConfigService } from "@nestjs/config";
 import { LlmService, ModelAttemptEvent } from "../src/modules/llm/llm.service";
-import { environmentBindings, runWithModels } from "../src/modules/model-settings/model-runtime";
+import { environmentBindings, runWithModels } from "../src/modules/model-settings/runtime/model-runtime";
 
 type AttemptEvent = ModelAttemptEvent;
 

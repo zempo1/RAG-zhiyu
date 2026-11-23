@@ -11,9 +11,9 @@ import { TasksService, terminalTask } from "../tasks/tasks.service";
 import { currentModelProfile } from "../embeddings/model-profile";
 import { embeddingFingerprint } from "../vector-store/qdrant-vector-store.service";
 import { ApiError } from "../../common/api-error";
-import { sealRuntimeModels } from "../model-settings/model-runtime";
-import { expandCitationContext } from "./citation-context";
-import { clearQuizReviews } from "../quizzes/quiz-review-state";
+import { sealRuntimeModels } from "../model-settings/runtime/model-runtime";
+import { expandCitationContext } from "./originals/citation-context";
+import { clearQuizReviews } from "../quizzes/reviews/quiz-review-state";
 
 export interface IngestOptions {
   knowledgeBaseId?: number;

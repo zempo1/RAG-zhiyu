@@ -1,8 +1,8 @@
 import { ConfigService } from "@nestjs/config";
 import { MemoryStore } from "../src/persistence/memory.store";
-import { QuizReviewsService } from "../src/modules/quizzes/quiz-reviews.service";
+import { QuizReviewsService } from "../src/modules/quizzes/reviews/quiz-reviews.service";
 import { QuizzesService } from "../src/modules/quizzes/quizzes.service";
-import { createVariantPractice } from "../src/modules/quizzes/quiz-review-state";
+import { createVariantPractice } from "../src/modules/quizzes/reviews/quiz-review-state";
 import type { QuizQuestion } from "../src/modules/quizzes/quiz-data";
 
 const question = (stem: string, knowledgePoint?: string): QuizQuestion => ({

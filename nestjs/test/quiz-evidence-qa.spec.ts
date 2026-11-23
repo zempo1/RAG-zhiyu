@@ -1,9 +1,9 @@
 import { jest } from "@jest/globals";
 import { ConfigService } from "@nestjs/config";
 import { AgentService } from "../src/modules/agent/agent.service";
-import { RetrievalService } from "../src/modules/rag/retrieval.service";
+import { RetrievalService } from "../src/modules/rag/retrieval/retrieval.service";
 import { MemoryStore } from "../src/persistence/memory.store";
-import { AgentQaTasksService } from "../src/modules/tasks/agent-qa.service";
+import { AgentQaTasksService } from "../src/modules/tasks/qa/agent-qa.service";
 import { HistoryService } from "../src/modules/history/history.service";
 
 const question = "请解释冬小麦的春化条件。";

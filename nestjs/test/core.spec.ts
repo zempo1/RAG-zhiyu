@@ -3,7 +3,7 @@ import { RecursiveChunker } from "../src/modules/documents/chunkers/recursive.ch
 import { InMemoryVectorStore } from "../src/modules/vector-store/in-memory-vector-store.service";
 import { RagService } from "../src/modules/rag/rag.service";
 import { ChatService } from "../src/modules/chat/chat.service";
-import { NO_CONTEXT_ANSWER } from "../src/modules/rag/citations";
+import { NO_CONTEXT_ANSWER } from "../src/modules/rag/citations/citations";
 import { pipeline } from "./helpers/pipeline";
 
 describe("configuration", () => {

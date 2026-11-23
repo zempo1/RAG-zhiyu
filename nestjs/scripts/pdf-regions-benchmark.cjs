@@ -15,11 +15,16 @@ const arg = (name, fallback) => {
       "Usage: node scripts/pdf-regions-benchmark.cjs --file <PDF> [--pages 2,23] [--build-dir dist] [--live]",
     );
   const build = resolve(arg("--build-dir", "dist"));
-  const { locateRegions } = require(join(build, "modules/documents/parsers/pdf-layout"));
-  const { PdfVisualService, PDF_VISION_PROMPT } = require(
-    join(build, "modules/documents/parsers/pdf-visual.service"),
+  const { locateRegions } = require(join(build, "modules/documents/parsers/pdf/layout/pdf-layout"));
+  const { PdfVisualService } = require(
+    join(build, "modules/documents/parsers/pdf/vision/pdf-visual.service"),
   );
-  const { PageAssetsService } = require(join(build, "modules/documents/page-assets.service"));
+  const { PDF_VISION_PROMPT } = require(
+    join(build, "modules/documents/parsers/pdf/vision/vision-output"),
+  );
+  const { PageAssetsService } = require(
+    join(build, "modules/documents/originals/page-assets.service"),
+  );
   const { LlmService } = require(join(build, "modules/llm/llm.service"));
   const { MemoryStore } = require(join(build, "persistence/memory.store"));
   const { validateConfig } = require(join(build, "config/configuration"));

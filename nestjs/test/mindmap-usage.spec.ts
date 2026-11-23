@@ -1,5 +1,5 @@
 import { MindMapsService } from "../src/modules/mindmaps/mindmaps.service";
-import { MINDMAP_PROMPT_VERSION } from "../src/modules/mindmaps/mindmap-planner";
+import { MINDMAP_PROMPT_VERSION } from "../src/modules/mindmaps/generation/mindmap-planner";
 import { pipeline } from "./helpers/pipeline";
 
 const tree = '{"text":"主题","children":[{"text":"全篇要点"}]}';
@@ -17,7 +17,7 @@ it.each(["reported", "missing", "replaced"])(
         {
           complete: async (_p: string, _k: unknown, _i: unknown, _s: unknown, opts: any) => {
             await opts.onAttempt({ phase: "start" });
-            await p.tasks.cancelMindMap(id, 1);
+            await p.tasks.cancel(id, 1);
             if (mode === "replaced") {
               const current = await p.store.get("tasks", id);
               await p.store.save("tasks", {

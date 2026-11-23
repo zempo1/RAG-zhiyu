@@ -1,7 +1,7 @@
 import { ConfigService } from "@nestjs/config";
 import { TokenizerService } from "../src/modules/embeddings/tokenizer.service";
-import { MindMapPlanner } from "../src/modules/mindmaps/mindmap-planner";
-import { MindMapGenerator, GenerationContext } from "../src/modules/mindmaps/mindmap-generator";
+import { MindMapPlanner } from "../src/modules/mindmaps/generation/mindmap-planner";
+import { MindMapGenerator, GenerationContext } from "../src/modules/mindmaps/generation/mindmap-generator";
 import { ModelOutputError } from "../src/modules/llm/llm.types";
 
 function context(controller = new AbortController()): GenerationContext {

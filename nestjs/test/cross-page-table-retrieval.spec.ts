@@ -1,7 +1,7 @@
-import { RetrievalService } from "../src/modules/rag/retrieval.service";
-import type { RetrievalSession } from "../src/modules/rag/retrieval.types";
-import { normalizeCitations } from "../src/modules/rag/citations";
-import { sliceSourceLocation } from "../src/modules/documents/parsers/source-anchors";
+import { RetrievalService } from "../src/modules/rag/retrieval/retrieval.service";
+import type { RetrievalSession } from "../src/modules/rag/retrieval/retrieval.types";
+import { normalizeCitations } from "../src/modules/rag/citations/citations";
+import { sliceSourceLocation } from "../src/modules/documents/parsers/pdf/layout/source-anchors";
 
 const retrieval = new RetrievalService({} as any, {} as any, {} as any, {} as any);
 function table(page: number, rows: string[][], start: number, groupId = "comparison") {

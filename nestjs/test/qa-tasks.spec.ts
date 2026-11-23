@@ -1,5 +1,5 @@
 import { MemoryStore } from "../src/persistence/memory.store";
-import { QaTasksService } from "../src/modules/tasks/qa-tasks.service";
+import { QaTasksService } from "../src/modules/tasks/qa/qa-tasks.service";
 import { ConfigService } from "@nestjs/config";
 
 it("queues a durable snapshot idempotently and publishes one answer across retries", async () => {

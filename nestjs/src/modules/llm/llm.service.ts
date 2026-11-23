@@ -3,7 +3,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { setTimeout as delay } from "node:timers/promises";
 import { ApiError } from "../../common/api-error";
-import { modelBinding, redactModelError } from "../model-settings/model-runtime";
+import { modelBinding, redactModelError } from "../model-settings/runtime/model-runtime";
 import {
   ModelUsage,
   ModelOutputError,

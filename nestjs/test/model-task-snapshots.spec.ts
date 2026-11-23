@@ -1,9 +1,9 @@
 import { ConfigService } from "@nestjs/config";
 import { pipeline } from "./helpers/pipeline";
 import { ModelSettingsService } from "../src/modules/model-settings/model-settings.service";
-import { modelBinding, runWithModels } from "../src/modules/model-settings/model-runtime";
-import { QaTasksService } from "../src/modules/tasks/qa-tasks.service";
-import { AgentQaTasksService } from "../src/modules/tasks/agent-qa.service";
+import { modelBinding, runWithModels } from "../src/modules/model-settings/runtime/model-runtime";
+import { QaTasksService } from "../src/modules/tasks/qa/qa-tasks.service";
+import { AgentQaTasksService } from "../src/modules/tasks/qa/agent-qa.service";
 import { HistoryService } from "../src/modules/history/history.service";
 
 const binding = (model: string) => ({

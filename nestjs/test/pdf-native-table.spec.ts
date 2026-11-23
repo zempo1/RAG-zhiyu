@@ -1,5 +1,5 @@
-import { nativeTableMarkdown } from "../src/modules/documents/parsers/pdf-native-table";
-import { TextPosition } from "../src/modules/documents/parsers/pdf-layout";
+import { nativeTableMarkdown } from "../src/modules/documents/parsers/pdf/layout/pdf-native-table";
+import { TextPosition } from "../src/modules/documents/parsers/pdf/layout/pdf-layout";
 
 const text = (value: string, x: number, y: number, width: number): TextPosition => ({
   text: value,

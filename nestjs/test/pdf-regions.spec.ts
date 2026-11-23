@@ -5,8 +5,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DocumentParser } from "../src/modules/documents/parsers/document.parser";
-import { PdfVisualService } from "../src/modules/documents/parsers/pdf-visual.service";
-import { PageAssetsService } from "../src/modules/documents/page-assets.service";
+import { PdfVisualService } from "../src/modules/documents/parsers/pdf/vision/pdf-visual.service";
+import { PageAssetsService } from "../src/modules/documents/originals/page-assets.service";
 import { MemoryStore } from "../src/persistence/memory.store";
 import { RecursiveChunker } from "../src/modules/documents/chunkers/recursive.chunker";
 import { TokenizerService } from "../src/modules/embeddings/tokenizer.service";
@@ -14,8 +14,8 @@ import {
   groupNearbyCrops,
   locateRegions,
   PdfRegion,
-} from "../src/modules/documents/parsers/pdf-layout";
-import { pdfRegionScale } from "../src/modules/documents/parsers/pdf-render-cache";
+} from "../src/modules/documents/parsers/pdf/layout/pdf-layout";
+import { pdfRegionScale } from "../src/modules/documents/parsers/pdf/cache/pdf-render-cache";
 
 async function fixture(
   kind:

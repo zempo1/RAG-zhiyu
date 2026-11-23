@@ -7,11 +7,11 @@ import { Store, Row, publicRow, now } from "../../persistence/store";
 import { ApiError } from "../../common/api-error";
 import { TokenizerService } from "../embeddings/tokenizer.service";
 import { TasksService, terminalTask } from "../tasks/tasks.service";
-import { sealRuntimeModels } from "../model-settings/model-runtime";
-import { sealQaCredential } from "../tasks/qa-credentials";
+import { sealRuntimeModels } from "../model-settings/runtime/model-runtime";
+import { sealQaCredential } from "../tasks/qa/qa-credentials";
 import { normalizeMindMap } from "./mindmap-data";
 
-import { MindMapRunner } from "./mindmap-runner";
+import { MindMapRunner } from "./generation/mindmap-runner";
 
 @Injectable()
 export class MindMapsService {

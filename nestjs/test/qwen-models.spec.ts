@@ -1,6 +1,6 @@
 import { ConfigService } from "@nestjs/config";
 import { jest } from "@jest/globals";
-import { QualityModelsService } from "../src/modules/rag/quality-models.service";
+import { QualityModelsService } from "../src/modules/rag/retrieval/quality-models.service";
 import { validateConfig } from "../src/config/configuration";
 
 it("defaults to Qwen3.7 and rejects unsupported flash dimensions", () => {

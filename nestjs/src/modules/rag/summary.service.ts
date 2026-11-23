@@ -5,12 +5,12 @@ import { createHash } from "node:crypto";
 import { Store } from "../../persistence/store";
 import { LlmService } from "../llm/llm.service";
 import { TokenizerService } from "../embeddings/tokenizer.service";
-import { Citation, normalizeCitations } from "./citations";
+import { Citation, normalizeCitations } from "./citations/citations";
 import { EvidenceSnapshot } from "./quality.types";
-import { OriginalEvidence } from "./retrieval.types";
+import { OriginalEvidence } from "./retrieval/retrieval.types";
 import { ModelExecutionOptions, ModelOutputError } from "../llm/llm.types";
-import { AgentLimitError } from "../agent/agent-budget";
-import { bindingIdentity, modelBinding } from "../model-settings/model-runtime";
+import { AgentLimitError } from "../agent/graph/agent-budget";
+import { bindingIdentity, modelBinding } from "../model-settings/runtime/model-runtime";
 
 @Injectable()
 export class SummaryService {

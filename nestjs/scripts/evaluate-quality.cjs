@@ -35,7 +35,7 @@ async function main() {
   } = require("../dist/modules/knowledge-bases/knowledge-bases.service");
   const { TasksService } = require("../dist/modules/tasks/tasks.service");
   const { DocumentsService } = require("../dist/modules/documents/documents.service");
-  const { IndexingService } = require("../dist/modules/documents/indexing.service");
+  const { IndexingService } = require("../dist/modules/documents/indexing/indexing.service");
   const { DocumentParser } = require("../dist/modules/documents/parsers/document.parser");
   const { RecursiveChunker } = require("../dist/modules/documents/chunkers/recursive.chunker");
   const { EmbeddingsService } = require("../dist/modules/embeddings/embeddings.service");
@@ -43,11 +43,11 @@ async function main() {
   const {
     InMemoryVectorStore,
   } = require("../dist/modules/vector-store/in-memory-vector-store.service");
-  const { QualityModelsService } = require("../dist/modules/rag/quality-models.service");
+  const { QualityModelsService } = require("../dist/modules/rag/retrieval/quality-models.service");
   const { RagService } = require("../dist/modules/rag/rag.service");
   const { SummaryService } = require("../dist/modules/rag/summary.service");
   const { LlmService } = require("../dist/modules/llm/llm.service");
-  const { normalizeCitations, NO_CONTEXT_ANSWER } = require("../dist/modules/rag/citations");
+  const { normalizeCitations, NO_CONTEXT_ANSWER } = require("../dist/modules/rag/citations/citations");
   const temp = await fs.mkdtemp(path.join(os.tmpdir(), "rag-quality-eval-"));
   const config = new ConfigService(
     validateConfig({

@@ -1,5 +1,5 @@
 import { pipeline } from "./helpers/pipeline";
-import { TaskQueueRuntime } from "../src/modules/tasks/task-queue.runtime";
+import { TaskQueueRuntime } from "../src/modules/tasks/queue/task-queue.runtime";
 
 it("dispatches an already committed task without relying on the upload request and does not duplicate published chunks", async () => {
   const p = await pipeline();

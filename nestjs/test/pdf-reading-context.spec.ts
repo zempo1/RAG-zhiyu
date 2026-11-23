@@ -1,4 +1,4 @@
-import { RetrievalService } from "../src/modules/rag/retrieval.service";
+import { RetrievalService } from "../src/modules/rag/retrieval/retrieval.service";
 
 const retrieval = new RetrievalService({} as any, {} as any, {} as any, {} as any);
 function source(number: number, text: string, start: number, parts: { text: string; y: number }[]) {

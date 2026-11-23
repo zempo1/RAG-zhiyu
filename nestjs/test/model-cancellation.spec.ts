@@ -1,7 +1,7 @@
 import { createServer, Server } from "node:http";
 import { ConfigService } from "@nestjs/config";
 import { EmbeddingsService } from "../src/modules/embeddings/embeddings.service";
-import { QualityModelsService } from "../src/modules/rag/quality-models.service";
+import { QualityModelsService } from "../src/modules/rag/retrieval/quality-models.service";
 
 let server: Server, base: string, arrived: () => void;
 beforeAll(async () => {

@@ -1,4 +1,4 @@
-import { Store, Table, Row, LatestRows, now } from "./store";
+import { Store, Table, Row, LatestRows, now, parseStoreTime } from "./store";
 import { ApiError } from "../common/api-error";
 
 export class MemoryStore extends Store {
@@ -66,6 +66,19 @@ export class MemoryStore extends Store {
   async delete(table: Table, id: number): Promise<void> {
     const execute = async () => {
       this.table(table).delete(id);
+    };
+    const pending = this.serial.then(execute, execute);
+    this.serial = pending.catch(() => undefined);
+    return pending;
+  }
+
+  async deleteExpiredRetrievalRuns(cutoff: Date, timezone: string): Promise<void> {
+    const execute = () => {
+      const runs = this.table("retrievalRuns");
+      for (const [id, run] of runs) {
+        const created = parseStoreTime(run.createdAt, timezone);
+        if (!Number.isFinite(created) || created < cutoff.getTime()) runs.delete(id);
+      }
     };
     const pending = this.serial.then(execute, execute);
     this.serial = pending.catch(() => undefined);

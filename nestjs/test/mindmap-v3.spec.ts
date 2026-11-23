@@ -1,7 +1,7 @@
 import { ConfigService } from "@nestjs/config";
 import { MindMapsService } from "../src/modules/mindmaps/mindmaps.service";
 import { TokenizerService } from "../src/modules/embeddings/tokenizer.service";
-import { MindMapPlanner } from "../src/modules/mindmaps/mindmap-planner";
+import { MindMapPlanner } from "../src/modules/mindmaps/generation/mindmap-planner";
 import { pipeline } from "./helpers/pipeline";
 
 const tree = '{"text":"主题","children":[{"text":"全篇要点"}]}';

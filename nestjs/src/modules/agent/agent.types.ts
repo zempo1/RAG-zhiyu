@@ -1,9 +1,9 @@
-import { RetrievalScope, OriginalEvidence } from "../rag/retrieval.types";
+import { RetrievalScope, OriginalEvidence } from "../rag/retrieval/retrieval.types";
 import { RetrievalOptions } from "../rag/quality.types";
-import { AgentBudgetState } from "./agent-budget";
+import { AgentBudgetState } from "./graph/agent-budget";
 import { ToolMessage, ToolCall } from "../llm/llm.types";
-import type { AgentGraphOwner } from "./agent-graph-owner";
-import type { AgentGraphRun } from "./agent-graph-run";
+import type { AgentGraphOwner } from "./checkpoint/agent-graph-owner";
+import type { AgentGraphRun } from "./graph/agent-graph-run";
 export interface PublicStep {
   runId: number;
   sequence: number;

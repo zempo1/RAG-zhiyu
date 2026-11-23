@@ -4,11 +4,11 @@ import { ConfigService } from "@nestjs/config";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { locateAdaptiveRegions } from "../src/modules/documents/parsers/adaptive-layout";
+import { locateAdaptiveRegions } from "../src/modules/documents/parsers/pdf/layout/adaptive-layout";
 import {
   PdfAnalysisClient,
   LayoutRegion,
-} from "../src/modules/documents/parsers/pdf-analysis.client";
+} from "../src/modules/documents/parsers/pdf/vision/pdf-analysis.client";
 
 async function fixture(
   kind:

@@ -8,8 +8,8 @@ const { join, resolve } = require("node:path");
 const { validateConfig } = require("../dist/config/configuration");
 const { MemoryStore } = require("../dist/persistence/memory.store");
 const { LlmService } = require("../dist/modules/llm/llm.service");
-const { PageAssetsService } = require("../dist/modules/documents/page-assets.service");
-const { PdfVisualService } = require("../dist/modules/documents/parsers/pdf-visual.service");
+const { PageAssetsService } = require("../dist/modules/documents/originals/page-assets.service");
+const { PdfVisualService } = require("../dist/modules/documents/parsers/pdf/vision/pdf-visual.service");
 const { DocumentParser } = require("../dist/modules/documents/parsers/document.parser");
 
 (async () => {

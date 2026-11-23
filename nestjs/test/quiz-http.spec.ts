@@ -5,10 +5,8 @@ import request from "supertest";
 import { randomUUID } from "node:crypto";
 import { ConfigService } from "@nestjs/config";
 import { configureApp } from "../src/bootstrap";
-import {
-  QuizzesController,
-  QuizAttemptsController,
-} from "../src/modules/quizzes/quizzes.controller";
+import { QuizzesController } from "../src/modules/quizzes/quizzes.controller";
+import { QuizAttemptsController } from "../src/modules/quizzes/quiz-attempts.controller";
 import { QuizzesService } from "../src/modules/quizzes/quizzes.service";
 import { TokenizerService } from "../src/modules/embeddings/tokenizer.service";
 import { pipeline } from "./helpers/pipeline";

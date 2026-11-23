@@ -1,5 +1,5 @@
 import { ConfigService } from "@nestjs/config";
-import { redactModelError } from "../src/modules/model-settings/model-runtime";
+import { redactModelError } from "../src/modules/model-settings/runtime/model-runtime";
 
 it("preserves only safe provider status and retry delay after removing echoed credentials", () => {
   const key = "sensitive-provider-key";

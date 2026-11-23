@@ -7,11 +7,11 @@ import { Store, Row, now, publicRow } from "../../persistence/store";
 import { ApiError } from "../../common/api-error";
 import { TokenizerService } from "../embeddings/tokenizer.service";
 import { TasksService, terminalTask } from "../tasks/tasks.service";
-import { sealRuntimeModels } from "../model-settings/model-runtime";
-import { sealQaCredential } from "../tasks/qa-credentials";
+import { sealRuntimeModels } from "../model-settings/runtime/model-runtime";
+import { sealQaCredential } from "../tasks/qa/qa-credentials";
 import { presentQuestions, scoreAnswers, validateCounts, QuizQuestion, Answers } from "./quiz-data";
-import { QuizRunner } from "./quiz-runner";
-import { clearQuizReviews, recordWrongQuestion, updateQuizAnswer } from "./quiz-review-state";
+import { QuizRunner } from "./generation/quiz-runner";
+import { clearQuizReviews, recordWrongQuestion, updateQuizAnswer } from "./reviews/quiz-review-state";
 
 export interface ProgressInput {
   currentIndex?: number;

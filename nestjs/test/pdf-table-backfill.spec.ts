@@ -1,10 +1,10 @@
 import PDFDocument from "pdfkit";
 import { pipeline } from "./helpers/pipeline";
-import { RetrievalService } from "../src/modules/rag/retrieval.service";
-import { PdfTableBackfillService } from "../src/modules/rag/pdf-table-backfill.service";
-import { DocumentOriginalsService } from "../src/modules/documents/document-originals.service";
+import { RetrievalService } from "../src/modules/rag/retrieval/retrieval.service";
+import { PdfTableBackfillService } from "../src/modules/rag/citations/pdf-table-backfill.service";
+import { DocumentOriginalsService } from "../src/modules/documents/originals/document-originals.service";
 import { AgentService } from "../src/modules/agent/agent.service";
-import { AgentBudget } from "../src/modules/agent/agent-budget";
+import { AgentBudget } from "../src/modules/agent/graph/agent-budget";
 
 async function longTable() {
   const pdf = new PDFDocument({ size: [600, 800], margin: 0, autoFirstPage: false });

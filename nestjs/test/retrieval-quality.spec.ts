@@ -4,7 +4,7 @@ import {
   fuse,
   LexicalIndex,
   searchLexical,
-} from "../src/modules/rag/retrieval-algorithms";
+} from "../src/modules/rag/retrieval/retrieval-algorithms";
 
 it("preserves identifiers and Chinese terms and restricts BM25 corpus before scoring", () => {
   expect(tokenize("错误 TS-999 在 Vue3.4 中发生")).toContain("ts-999");

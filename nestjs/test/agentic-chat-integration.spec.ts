@@ -1,10 +1,11 @@
 import { EventEmitter } from "node:events";
 import { ChatService } from "../src/modules/chat/chat.service";
 import { ChatController } from "../src/modules/chat/chat.controller";
+import { ChatWorkflowService } from "../src/modules/chat/chat-workflow.service";
 it("检索开始前发送可恢复的任务标识，断流也能找到同一会话", async () => {
   const order: string[] = [];
   let notice: any;
-  const controller = new ChatController(
+  const workflow = new ChatWorkflowService(
     {
       prepare: async () => {
         order.push("prepare");
@@ -24,7 +25,7 @@ it("检索开始前发送可恢复的任务标识，断流也能找到同一会�
       execution: () => ({ signal: new AbortController().signal, dispose: () => {} }),
     } as any,
   );
-  await (controller as any).prepare(
+  await workflow.prepare(
     { question: "讲解题目", knowledgeBaseId: 1 },
     1,
     undefined,
@@ -103,8 +104,8 @@ it("binds SSE disconnection before preparation and aborts retrieval without star
     create: async () => ({ id: 1, knowledgeBaseId: 1, messages: [] }),
     addMessage: async () => {},
   };
-  const controller = new ChatController(chat, history, { lookup: async () => null } as any);
-  await controller.stream({ question: "问题", knowledgeBaseId: 1 }, 1, undefined, res);
+  const workflow = new ChatWorkflowService(chat, history, { lookup: async () => null } as any);
+  await new ChatController(workflow).stream({ question: "问题", knowledgeBaseId: 1 }, 1, undefined, res);
   expect(signal).toBeDefined();
   expect(signal?.aborted).toBe(true);
   expect(generation).toBe(0);

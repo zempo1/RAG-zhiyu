@@ -6,7 +6,7 @@ import {
   runWithModels,
   sealRuntimeModels,
   runWithTaskModels,
-} from "../src/modules/model-settings/model-runtime";
+} from "../src/modules/model-settings/runtime/model-runtime";
 
 function fixture() {
   const config = new ConfigService({

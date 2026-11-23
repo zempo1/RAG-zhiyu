@@ -10,7 +10,7 @@ import {
 import { TokenizerService } from "./tokenizer.service";
 import { RequestScheduler } from "../../common/request-scheduler";
 import { retryTransientRequest } from "../../common/transient-request";
-import { modelBinding, redactModelError } from "../model-settings/model-runtime";
+import { modelBinding, redactModelError } from "../model-settings/runtime/model-runtime";
 
 export const REMOTE_EMBEDDING_BATCH_SIZE = 10;
 export const REMOTE_EMBEDDING_CONCURRENCY = 2;

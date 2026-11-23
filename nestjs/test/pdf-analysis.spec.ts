@@ -1,7 +1,7 @@
 import { ConfigService } from "@nestjs/config";
 import { createServer, Server } from "node:http";
 import { AddressInfo } from "node:net";
-import { PdfAnalysisClient } from "../src/modules/documents/parsers/pdf-analysis.client";
+import { PdfAnalysisClient } from "../src/modules/documents/parsers/pdf/vision/pdf-analysis.client";
 
 describe("internal PDF analysis client", () => {
   let server: Server;

@@ -16,9 +16,9 @@ const arg = (name, fallback) => {
   const build = path.resolve(arg("--build-dir", "dist"));
   const { validateConfig } = require(path.join(build, "config/configuration"));
   const { PdfVisualService } = require(
-    path.join(build, "modules/documents/parsers/pdf-visual.service"),
+    path.join(build, "modules/documents/parsers/pdf/vision/pdf-visual.service"),
   );
-  const { PageAssetsService } = require(path.join(build, "modules/documents/page-assets.service"));
+  const { PageAssetsService } = require(path.join(build, "modules/documents/originals/page-assets.service"));
   const { LlmService } = require(path.join(build, "modules/llm/llm.service"));
   const { MemoryStore } = require(path.join(build, "persistence/memory.store"));
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");

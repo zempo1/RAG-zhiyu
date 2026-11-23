@@ -1,8 +1,9 @@
-/** 实现业务处理；所属能力：后台任务状态、队列调度、重试、索引及问答任务执行。 */
-import { Injectable } from "@nestjs/common";
+/** 管理后台任务的创建、查询、取消和重试。 */
+import { Injectable, Optional } from "@nestjs/common";
 import { Store, Row, now } from "../../persistence/store";
 import { ApiError } from "../../common/api-error";
 import { KnowledgeBasesService } from "../knowledge-bases/knowledge-bases.service";
+import { AgentQaTasksService } from "./qa/agent-qa.service";
 
 export const terminalTask = (status: string) =>
   ["completed", "failed", "partial_failed", "canceled"].includes(status);
@@ -13,6 +14,7 @@ export class TasksService {
   constructor(
     private readonly store: Store,
     private readonly libraries: KnowledgeBasesService,
+    @Optional() private readonly agentTasks?: AgentQaTasksService,
   ) {}
 
   private present(row: Row): Row {
@@ -135,10 +137,16 @@ export class TasksService {
     });
   }
 
-  async cancelMindMap(id: number, userId: number) {
-    const initial = await this.get(id, userId);
-    if (!["mindmap", "quiz", REVIEW_CLASSIFICATION].includes(initial.kind))
-      throw new ApiError(409, "不支持取消此任务");
+  async cancel(id: number, userId: number) {
+    const task = await this.owned(id, userId);
+    if (["mindmap", "quiz", REVIEW_CLASSIFICATION].includes(task.kind))
+      return this.cancelGenerated(task, userId);
+    if (!this.agentTasks) throw new ApiError(404, "Agent任务不存在");
+    return this.agentTasks.cancel(id, userId);
+  }
+
+  private async cancelGenerated(initial: Row, userId: number) {
+    const { id } = initial;
     await this.store.transaction(async (tx) => {
       await tx.lock("knowledgeBases", initial.knowledgeBaseId);
       if (initial.documentId) await tx.lock("documents", initial.documentId);
@@ -158,9 +166,14 @@ export class TasksService {
     return this.get(id, userId);
   }
 
-  async get(id: number, userId: number) {
+  private async owned(id: number, userId: number) {
     const task = await this.store.get("tasks", id);
     if (!task || task.userId !== userId) throw new ApiError(404, "任务不存在");
+    return task;
+  }
+
+  async get(id: number, userId: number) {
+    const task = await this.owned(id, userId);
     const children =
       task.kind === "rebuild" ? await this.store.list("tasks", { parentTaskId: id }) : undefined;
     const sanitize = (row: Row) => {

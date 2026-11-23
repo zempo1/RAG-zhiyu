@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { Store, publicRow } from "../../persistence/store";
 import { ApiError } from "../../common/api-error";
 import { KnowledgeBasesService } from "../knowledge-bases/knowledge-bases.service";
-import { Citation } from "../rag/citations";
+import { Citation } from "../rag/citations/citations";
 
 @Injectable()
 export class HistoryService {

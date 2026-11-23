@@ -1,5 +1,5 @@
 import { ConfigService } from "@nestjs/config";
-import { PdfVisualService } from "../src/modules/documents/parsers/pdf-visual.service";
+import { PdfVisualService } from "../src/modules/documents/parsers/pdf/vision/pdf-visual.service";
 
 it("retries a single timed-out request inside the regional budget and frees its slot", async () => {
   let calls = 0;
