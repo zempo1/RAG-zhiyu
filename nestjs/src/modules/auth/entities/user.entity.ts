@@ -23,6 +23,9 @@ export class User {
   @Column({ type: "varchar", length: 255, nullable: false })
   password: string;
 
+  @Column({ type: "mediumblob", nullable: true, select: false })
+  avatar?: Buffer | null;
+
   @Column({ type: "datetime", precision: 6, nullable: true, name: "created_at" })
   createdAt: Date | null;
 }

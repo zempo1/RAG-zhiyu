@@ -10,7 +10,9 @@ import { DataSource } from "typeorm";
 import { User } from "./entities/user.entity";
 import { Store } from "../../persistence/store";
 import { MemoryStore } from "../../persistence/memory.store";
-import { memoryUserRepository } from "./user-repository";
+import { databaseUserRepository, memoryUserRepository } from "./user-repository";
+import { AvatarController } from "./avatar/avatar.controller";
+import { AvatarService } from "./avatar/avatar.service";
 
 @Module({
   imports: [
@@ -23,7 +25,7 @@ import { memoryUserRepository } from "./user-repository";
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, AvatarController],
   providers: [
     {
       provide: getRepositoryToken(User),
@@ -31,9 +33,10 @@ import { memoryUserRepository } from "./user-repository";
       useFactory: (config: ConfigService, source: DataSource, store: Store) =>
         config.get("STORAGE_DRIVER") === "memory"
           ? memoryUserRepository(store as MemoryStore)
-          : source.getRepository(User),
+          : databaseUserRepository(source.getRepository(User)),
     },
     AuthService,
+    AvatarService,
     { provide: APP_GUARD, useClass: AuthGuard },
   ],
 })

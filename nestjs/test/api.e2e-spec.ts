@@ -20,6 +20,7 @@ import { IndexingService } from "../src/modules/documents/indexing/indexing.serv
 import { TaskQueueRuntime } from "../src/modules/tasks/queue/task-queue.runtime";
 import { agentLlmFixture } from "./helpers/agent-llm.fixture";
 import { MindMapsService } from "../src/modules/mindmaps/mindmaps.service";
+import { createCanvas } from "@napi-rs/canvas";
 
 describe("existing Vue API contract", () => {
   let app: INestApplication;
@@ -128,6 +129,50 @@ describe("existing Vue API contract", () => {
       .send({ username: "bob", password: "secret123" })
       .expect(200);
     other = second.body.data.token;
+  });
+  it("stores, replaces and isolates account avatars", async () => {
+    const server = request(app.getHttpServer());
+    const path = "/api/auth/avatar";
+    const picture = (color: string) => {
+      const canvas = createCanvas(24, 16);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, 24, 16);
+      return canvas.toBuffer("image/png");
+    };
+    await server.get(path).expect(401);
+    await server.get(path).set(auth()).expect(204);
+    await server
+      .put(path)
+      .set(auth())
+      .attach("file", Buffer.from("not a picture"), "bad.png")
+      .expect(400);
+    const first = await server
+      .put(path)
+      .set(auth())
+      .attach("file", Buffer.concat([picture("red")], 5 * 1024 * 1024), "red.png")
+      .expect(200)
+      .expect("Content-Type", /image\/webp/);
+    await server
+      .put(path)
+      .set(auth())
+      .attach("file", Buffer.alloc(5 * 1024 * 1024 + 1), "large.png")
+      .expect(413);
+    const unchanged = await server.get(path).set(auth()).expect(200);
+    expect(unchanged.body).toEqual(first.body);
+    await server.get(path).set("Authorization", `Bearer ${other}`).expect(204);
+    const second = await server
+      .put(path)
+      .set(auth())
+      .attach("file", picture("blue"), "blue.png")
+      .expect(200);
+    expect(second.body).not.toEqual(first.body);
+    const saved = await server
+      .get(path)
+      .set(auth())
+      .expect(200)
+      .expect("Cache-Control", "private, no-store");
+    expect(saved.body).toEqual(second.body);
   });
   it("uploads Markdown, lists only summaries and answers synchronously", async () => {
     const upload = await request(app.getHttpServer())
