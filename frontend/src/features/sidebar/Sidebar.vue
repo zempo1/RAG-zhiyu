@@ -8,18 +8,6 @@
         <div class="brand" v-show="!isCollapsed">
           <h2>知屿 · Islet</h2>
         </div>
-        <div v-if="!isCollapsed" class="settings-icon-wrapper">
-          <el-tooltip content="模型设置" placement="bottom">
-            <button
-              type="button"
-              class="settings-icon"
-              aria-label="模型设置"
-              @click="handleOpenSettings"
-            >
-              <el-icon><Key /></el-icon>
-            </button>
-          </el-tooltip>
-        </div>
       </div>
 
       <el-button
@@ -79,11 +67,18 @@
 
     <div class="sidebar-footer">
       <div class="user-info">
-        <el-avatar :size="32" class="user-avatar" icon="UserFilled" />
+        <el-avatar
+          v-if="!isCollapsed"
+          :size="32"
+          class="user-avatar"
+          :src="avatarUrl"
+          :icon="UserFilled"
+          :alt="`${username}的头像`"
+        />
         <div class="user-details" v-show="!isCollapsed">
           <span class="name">{{ username }}</span>
         </div>
-        <div class="user-actions" v-if="!isCollapsed">
+        <div class="user-actions">
           <el-dropdown
             ref="accountMenu"
             trigger="click"
@@ -95,9 +90,18 @@
               type="button"
               class="action-icon account-settings-trigger"
               aria-label="账户设置"
+              :aria-busy="uploading"
               title="账户设置"
             >
-              <el-icon><Setting /></el-icon>
+              <el-avatar
+                v-if="isCollapsed"
+                :size="32"
+                class="user-avatar"
+                :src="avatarUrl"
+                :icon="UserFilled"
+                :alt="`${username}的头像`"
+              />
+              <el-icon v-else><Setting /></el-icon>
             </button>
             <template #dropdown>
               <el-dropdown-menu>
@@ -146,14 +150,15 @@
                 <el-dropdown-item command="profile" divided>
                   <el-icon><EditPen /></el-icon>修改资料
                 </el-dropdown-item>
+                <el-dropdown-item command="models">
+                  <el-icon><Key /></el-icon>模型设置
+                </el-dropdown-item>
+                <el-dropdown-item command="logout" divided>
+                  <el-icon><SwitchButton /></el-icon>退出登录
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
-          <el-tooltip content="退出登录" placement="top">
-            <el-icon class="action-icon logout" @click.stop="handleLogout">
-              <SwitchButton />
-            </el-icon>
-          </el-tooltip>
         </div>
       </div>
     </div>
@@ -161,7 +166,9 @@
     <ChangePasswordDialog
       v-model="changePasswordVisible"
       :current-username="username"
-      @success="handlePasswordChanged"
+      :avatar-url="avatarUrl"
+      :avatar-uploading="uploading"
+      @avatar-selected="changeAvatar"
       @username-changed="handleUsernameChanged"
     />
   </aside>
@@ -171,11 +178,11 @@
 import { ref, computed } from "vue";
 import Upload from "../upload/Upload.vue";
 import ChangePasswordDialog from "../account/ChangePasswordDialog.vue";
+import { useAccountAvatar } from "../account/useAccountAvatar";
 import { theme, setTheme, type Theme } from "../../composables/useTheme";
 import {
   Plus,
   UserFilled,
-  UploadFilled,
   Menu,
   EditPen,
   ChatLineRound,
@@ -189,15 +196,6 @@ import {
   Key,
 } from "@element-plus/icons-vue";
 
-const accountMenu = ref<{ handleClose: () => void }>();
-
-function handleAccountCommand(command: Theme | "profile") {
-  if (command === "profile") handleChangePassword();
-  else {
-    setTheme(command);
-    accountMenu.value?.handleClose();
-  }
-}
 import { useConfirm } from "../../composables/useConfirm";
 import { useToast } from "../../composables/useToast";
 import type { ChatItem } from "../../types";
@@ -242,6 +240,25 @@ const isCollapsed = computed({
 });
 const chats = ref<ChatItem[]>([]);
 const changePasswordVisible = ref(false);
+const accountMenu = ref<{ handleClose: () => void }>();
+const { avatarUrl, uploading, changeAvatar } = useAccountAvatar();
+
+function handleAccountCommand(command: Theme | "profile" | "models" | "logout") {
+  accountMenu.value?.handleClose();
+  switch (command) {
+    case "profile":
+      changePasswordVisible.value = true;
+      break;
+    case "models":
+      emit("open-settings");
+      break;
+    case "logout":
+      void handleLogout();
+      break;
+    default:
+      setTheme(command);
+  }
+}
 
 const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value;
@@ -268,16 +285,6 @@ const handleLogout = async () => {
   emit("logout");
   toast.success("退出成功");
 };
-
-const handleOpenSettings = () => {
-  emit("open-settings");
-};
-
-const handleChangePassword = () => {
-  changePasswordVisible.value = true;
-};
-
-const handlePasswordChanged = () => {};
 
 const handleUsernameChanged = (newUsername: string) => {
   emit("username-changed", newUsername);

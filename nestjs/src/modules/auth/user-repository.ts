@@ -1,4 +1,4 @@
-import type { DeepPartial, FindOptionsWhere } from "typeorm";
+import type { DeepPartial, FindOptionsWhere, Repository } from "typeorm";
 import type { User } from "./entities/user.entity";
 import { MemoryStore } from "../../persistence/memory.store";
 
@@ -6,7 +6,23 @@ import { MemoryStore } from "../../persistence/memory.store";
 export interface UserRepository {
   findOneBy(where: FindOptionsWhere<User>): Promise<User | null>;
   save(user: DeepPartial<User>): Promise<User>;
-  update(id: number, changes: Partial<Pick<User, "username" | "password">>): Promise<unknown>;
+  update(
+    id: number,
+    changes: Partial<Pick<User, "username" | "password" | "avatar">>,
+  ): Promise<unknown>;
+  findAvatar(id: number): Promise<Buffer | null>;
+}
+
+export function databaseUserRepository(repo: Repository<User>): UserRepository {
+  return {
+    findOneBy: (where) => repo.findOneBy(where),
+    save: (user) => repo.save(user),
+    update: (id, changes) => repo.update(id, changes),
+    async findAvatar(id) {
+      const row = await repo.findOne({ where: { id }, select: { avatar: true } });
+      return row?.avatar ?? null;
+    },
+  };
 }
 
 /** Explicit memory-mode adapter; production uses TypeORM's actual Repository<User>. */
@@ -32,8 +48,13 @@ export function memoryUserRepository(store: MemoryStore): UserRepository {
       return hydrate(row)!;
     },
     async update(id, changes) {
-      const existing = await store.get("users", id);
-      if (existing) await store.save("users", { ...existing, ...changes });
+      await store.transaction(async (tx) => {
+        if (await tx.get("users", id)) await tx.save("users", { id, ...changes });
+      });
+    },
+    async findAvatar(id) {
+      const row = await store.get("users", id);
+      return row?.avatar ? Buffer.from(row.avatar) : null;
     },
   };
 }
