@@ -19,6 +19,7 @@
       align-items: center;
 
       .header-top {
+        display: flex;
         justify-content: center;
         margin-bottom: 20px;
       }
@@ -41,6 +42,10 @@
     .user-info {
       justify-content: center;
       padding: 8px 0;
+
+      .user-actions {
+        margin-left: 0;
+      }
     }
   }
 
@@ -50,9 +55,9 @@
     flex-direction: column;
 
     .header-top {
-      display: flex;
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr) 40px;
       align-items: center;
-      justify-content: space-between;
       margin-bottom: 24px;
       height: 40px;
     }
@@ -79,6 +84,8 @@
     }
 
     .brand {
+      text-align: center;
+
       h2 {
         margin: 0;
         font-size: 1.1rem;
@@ -87,28 +94,6 @@
       }
     }
 
-    .settings-icon {
-      border: 0;
-      background: transparent;
-      padding: 0;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      color: var(--text-secondary);
-      border-radius: 50%;
-
-      &:hover {
-        background-color: var(--bg-hover);
-        color: var(--text-primary);
-      }
-
-      .el-icon {
-        font-size: 20px;
-      }
-    }
   }
 
   .new-chat-btn-full {
@@ -279,15 +264,10 @@
       align-items: center;
       gap: 12px;
       padding: 12px;
-      cursor: pointer;
       border-radius: 12px;
-      transition: background 0.2s;
       white-space: nowrap;
       flex: 1;
-
-      &:hover {
-        background-color: var(--bg-hover);
-      }
+      min-width: 0;
 
       .user-avatar {
         background: var(--primary-gradient);
@@ -297,10 +277,13 @@
       .user-details {
         display: flex;
         flex-direction: column;
+        min-width: 0;
 
         .name {
           font-size: 0.875rem;
           font-weight: 500;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
       }
@@ -313,7 +296,9 @@
         .action-icon {
           color: var(--text-secondary);
           font-size: 16px;
-          padding: 6px;
+          padding: 0;
+          width: 44px;
+          height: 44px;
           border-radius: 6px;
           transition: all 0.2s;
           cursor: pointer;
@@ -323,9 +308,6 @@
             color: var(--text-primary);
           }
 
-          &.logout:hover {
-            color: light-dark(#9a294c, #ef4444);
-          }
         }
       }
     }

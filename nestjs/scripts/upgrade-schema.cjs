@@ -40,6 +40,10 @@ const {
       ManualQuizCategories1795219200003,
     } = require("../dist/persistence/migrations/1795219200003-manual-quiz-categories");
     await new ManualQuizCategories1795219200003().up(runner);
+    const {
+      UserAvatar1795219200004,
+    } = require("../dist/persistence/migrations/1795219200004-user-avatar");
+    await new UserAvatar1795219200004().up(runner);
     console.log("知识库、版本、任务与引用结构升级完成；旧文档归入用户默认库，旧页码保持未知。");
   } finally {
     await runner.release();

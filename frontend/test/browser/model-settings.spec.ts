@@ -75,7 +75,8 @@ test("saves SiliconFlow BGE-M3 per account and reloads without showing the store
   page,
 }) => {
   const state = await fixture(page);
-  await page.getByRole("button", { name: "模型设置", exact: true }).click();
+  await page.getByRole("button", { name: "账户设置" }).click();
+  await page.getByRole("menuitem", { name: "模型设置" }).click();
   const dialog = page.getByRole("dialog", { name: "模型设置", exact: true });
   await dialog.getByRole("tab", { name: "向量化", exact: true }).click();
   await dialog.getByLabel("接口协议", { exact: true }).press("ArrowDown");
@@ -103,7 +104,8 @@ test("saves SiliconFlow BGE-M3 per account and reloads without showing the store
   await expect(dialog).toContainText("需手动重建索引");
   await dialog.getByRole("button", { name: "关闭", exact: true }).click();
   await page.reload();
-  await page.getByRole("button", { name: "模型设置", exact: true }).click();
+  await page.getByRole("button", { name: "账户设置" }).click();
+  await page.getByRole("menuitem", { name: "模型设置" }).click();
   await dialog.getByRole("tab", { name: "向量化", exact: true }).click();
   await expect(dialog.getByLabel("模型名称", { exact: true })).toHaveValue("BAAI/bge-m3");
   await expect(dialog.getByLabel("API Key", { exact: true })).toHaveValue("");
@@ -117,7 +119,8 @@ test("requires a key for a new endpoint, preserves drafts on failure and restore
   page,
 }) => {
   const state = await fixture(page);
-  await page.getByRole("button", { name: "模型设置", exact: true }).click();
+  await page.getByRole("button", { name: "账户设置" }).click();
+  await page.getByRole("menuitem", { name: "模型设置" }).click();
   const dialog = page.getByRole("dialog", { name: "模型设置", exact: true });
   await dialog.getByLabel("API 地址", { exact: true }).fill("https://new.example/v1");
   await dialog.getByRole("button", { name: "保存当前配置", exact: true }).click();
@@ -140,7 +143,8 @@ test("imports a legacy key only on explicit action and stops injecting it into a
   page,
 }) => {
   const state = await fixture(page, true);
-  await page.getByRole("button", { name: "模型设置", exact: true }).click();
+  await page.getByRole("button", { name: "账户设置" }).click();
+  await page.getByRole("menuitem", { name: "模型设置" }).click();
   const dialog = page.getByRole("dialog", { name: "模型设置", exact: true });
   await expect(dialog.getByLabel("API Key", { exact: true })).toHaveValue("");
   expect(await page.evaluate(() => localStorage.getItem("user_api_key"))).toBe(

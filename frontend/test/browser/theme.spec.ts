@@ -58,7 +58,9 @@ test("工作区切换主题，设置、文档弹窗、测验与阅读器使用�
     "rgb(241, 245, 249)",
   );
   await page.locator(".modal-container .close-btn").click();
-  await page.getByRole("button", { name: "模型设置" }).click();
+  await page.getByRole("button", { name: "账户设置" }).click();
+
+  await page.getByRole("menuitem", { name: "模型设置" }).click();
   await expect(page.getByRole("dialog", { name: "模型设置" })).toBeVisible();
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "管理文档", exact: true }).click();

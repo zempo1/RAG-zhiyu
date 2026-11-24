@@ -34,6 +34,7 @@ import {
 import { RemoveOutlines1795219200001 } from "./migrations/1795219200001-remove-outlines";
 import { QuizReviews1795219200002 } from "./migrations/1795219200002-quiz-reviews";
 import { ManualQuizCategories1795219200003 } from "./migrations/1795219200003-manual-quiz-categories";
+import { UserAvatar1795219200004 } from "./migrations/1795219200004-user-avatar";
 
 export const entityTargets = {
   quizzes: Quiz,
@@ -88,6 +89,7 @@ export function mysqlOptions(env: Record<string, any>): DataSourceOptions {
       RemoveOutlines1795219200001,
       QuizReviews1795219200002,
       ManualQuizCategories1795219200003,
+      UserAvatar1795219200004,
     ],
     synchronize: false,
     migrationsRun: false,
