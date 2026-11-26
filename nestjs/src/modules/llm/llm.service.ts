@@ -35,9 +35,10 @@ export class LlmService {
   ): Promise<any> {
     const binding = modelBinding(this.config, vision ? "vision" : execution.role || "chat");
     // Account bindings are indivisible; stale browser headers cannot override their credential.
-    const key = binding.custom
-      ? binding.apiKey
-      : (vision && this.config.get<string>("VISION_API_KEY")) || apiKey?.trim() || binding.apiKey;
+    const key =
+      binding.custom || (vision && binding.provider === "siliconflow")
+        ? binding.apiKey
+        : (vision && this.config.get<string>("VISION_API_KEY")) || apiKey?.trim() || binding.apiKey;
     if (!key)
       throw new ApiError(
         500,

@@ -50,14 +50,26 @@ export function environmentBindings(config: ConfigService): Record<ModelRole, Mo
     model: config.get("CHAT_MODEL") || "qwen3.8-flash",
     apiKey: config.get("CHAT_API_KEY") || undefined,
   };
+  const siliconFlowUrl = "https://api.siliconflow.cn/v1";
+  const visionUrl = config.get("VISION_BASE_URL") || siliconFlowUrl;
+  const embeddingProvider =
+    config.get<ModelProvider>("EMBEDDING_PROVIDER") ||
+    (config.get("STORAGE_DRIVER") === "memory" ? "local" : "siliconflow");
+  const embeddingUrl =
+    config.get("EMBEDDING_BASE_URL") ||
+    (embeddingProvider === "siliconflow"
+      ? siliconFlowUrl
+      : "https://dashscope.aliyuncs.com/compatible-mode/v1");
   return {
     chat,
     agent: { ...chat, model: config.get("AGENT_MODEL") || chat.model },
     vision: {
       ...chat,
-      baseUrl: config.get("VISION_BASE_URL") || chat.baseUrl,
-      model: config.get("VISION_MODEL") || "qwen3.8-flash",
-      apiKey: config.get("VISION_API_KEY") || chat.apiKey,
+      provider: visionUrl === siliconFlowUrl ? "siliconflow" : chat.provider,
+      baseUrl: visionUrl,
+      model: config.get("VISION_MODEL") || "Qwen/Qwen3.5-4B",
+      apiKey:
+        config.get("VISION_API_KEY") || (visionUrl === chat.baseUrl ? chat.apiKey : undefined),
     },
     queryPlan: {
       ...chat,
@@ -66,22 +78,22 @@ export function environmentBindings(config: ConfigService): Record<ModelRole, Mo
       apiKey: config.get("QUERY_PLAN_API_KEY") || chat.apiKey,
     },
     embedding: {
-      provider:
-        config.get("EMBEDDING_PROVIDER") ||
-        (config.get("STORAGE_DRIVER") === "memory" ? "local" : "dashscope"),
-      baseUrl:
-        config.get("EMBEDDING_BASE_URL") || "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      provider: embeddingProvider,
+      baseUrl: embeddingUrl,
       model:
         config.get("EMBEDDING_MODEL") ||
-        (config.get("STORAGE_DRIVER") === "memory"
+        (embeddingProvider === "local"
           ? "Xenova/all-MiniLM-L6-v2"
-          : "qwen3.7-text-embedding-flash"),
-      apiKey: config.get("EMBEDDING_API_KEY") || chat.apiKey,
+          : embeddingProvider === "siliconflow"
+            ? "BAAI/bge-m3"
+            : "qwen3.7-text-embedding-flash"),
+      apiKey:
+        config.get("EMBEDDING_API_KEY") ||
+        (embeddingUrl === chat.baseUrl ? chat.apiKey : undefined),
       dimensions: Number(
-        config.get("EMBEDDING_DIMENSIONS") ||
-          (config.get("STORAGE_DRIVER") === "memory" ? 384 : 1024),
+        config.get("EMBEDDING_DIMENSIONS") || (embeddingProvider === "local" ? 384 : 1024),
       ),
-      sendDimensions: true,
+      sendDimensions: embeddingProvider !== "siliconflow",
     },
     rerank: {
       provider: "dashscope",

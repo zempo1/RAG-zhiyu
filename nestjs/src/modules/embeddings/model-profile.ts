@@ -59,10 +59,7 @@ export function currentModelProfile(config: ConfigService): ModelProfile {
       tokenizerDigest: tokenizerDigest(config.get("EMBEDDING_TOKENIZER") || ""),
       chunkingVersion: "tokens-v1",
     };
-  const provider =
-    config.get("EMBEDDING_PROVIDER") ||
-    (config.get("STORAGE_DRIVER") === "memory" ? "local" : "dashscope");
-  if (provider === "local")
+  if (binding.provider === "local")
     return {
       ...legacyModelProfile(),
       model: config.get("LEGACY_EMBEDDING_MODEL") || LEGACY_MODEL,
@@ -74,10 +71,12 @@ export function currentModelProfile(config: ConfigService): ModelProfile {
       chunkingVersion: "tokens-v1",
     };
   return {
-    provider: "dashscope",
-    model: config.get("EMBEDDING_MODEL") || "qwen3.7-text-embedding-flash",
+    provider: binding.provider,
+    ...(binding.provider === "siliconflow" ? { baseUrl: binding.baseUrl } : {}),
+    sendDimensions: binding.sendDimensions,
+    model: binding.model,
     revision: config.get("EMBEDDING_REVISION") || "api-v1",
-    dimensions: Number(config.get("EMBEDDING_DIMENSIONS") || 1024),
+    dimensions: binding.dimensions!,
     tokenizer: config.get("EMBEDDING_TOKENIZER") || "estimate:utf8-v1",
     tokenizerDigest: tokenizerDigest(config.get("EMBEDDING_TOKENIZER") || ""),
     chunkingVersion: "tokens-v1",
@@ -96,6 +95,9 @@ export function profileFingerprint(profile: ModelProfile): string {
 
 export function assertEmbeddingCompatible(profile: ModelProfile, config: ConfigService) {
   const active = currentModels()?.bindings.embedding;
+  const binding = active || environmentBindings(config).embedding;
+  if (binding.provider === "siliconflow" && profile.provider === "dashscope" && !profile.baseUrl)
+    throw new ApiError(409, "向量模型已变更，请重建索引");
   if (!active || (!active.custom && !profile.baseUrl)) return;
   const current = currentModelProfile(config);
   const identity = (p: ModelProfile) =>

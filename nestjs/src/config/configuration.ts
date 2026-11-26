@@ -31,7 +31,7 @@ export function validateConfig(input: Record<string, unknown>): Record<string, a
   const url = new URL(c.CHAT_BASE_URL);
   if (!["http:", "https:"].includes(url.protocol)) throw new Error("CHAT_BASE_URL must be HTTP(S)");
   c.CHAT_MODEL ||= "qwen3.8-flash";
-  c.VISION_MODEL ||= "qwen3.8-flash";
+  c.VISION_MODEL ||= "Qwen/Qwen3.5-4B";
   if (
     !pdfMigrationWarningShown &&
     (c.PDF_ANALYSIS_MODE !== undefined || c.PDF_ANALYSIS_NATIVE_FAST_PATH !== undefined)
@@ -54,18 +54,22 @@ export function validateConfig(input: Record<string, unknown>): Record<string, a
     c.PDF_ANALYSIS_TIMEOUT_MS > 600000
   )
     throw new Error("PDF_ANALYSIS_TIMEOUT_MS must be within [1,600000]");
-  c.VISION_BASE_URL ||= c.CHAT_BASE_URL;
+  c.VISION_BASE_URL ||= "https://api.siliconflow.cn/v1";
   if (!["http:", "https:"].includes(new URL(c.VISION_BASE_URL).protocol))
     throw new Error("VISION_BASE_URL must be HTTP(S)");
   if (c.VISION_ENABLED !== undefined && ![true, false, "true", "false"].includes(c.VISION_ENABLED))
     throw new Error("VISION_ENABLED must be true or false");
   c.VISION_ENABLED = c.VISION_ENABLED !== false && c.VISION_ENABLED !== "false";
   c.PAGE_ASSETS_DIR = resolve(c.PAGE_ASSETS_DIR || ".data/pages");
-  c.EMBEDDING_PROVIDER ||= c.STORAGE_DRIVER === "memory" ? "local" : "dashscope";
-  if (!["local", "dashscope"].includes(c.EMBEDDING_PROVIDER))
+  c.EMBEDDING_PROVIDER ||= c.STORAGE_DRIVER === "memory" ? "local" : "siliconflow";
+  if (!["local", "dashscope", "siliconflow"].includes(c.EMBEDDING_PROVIDER))
     throw new Error("Invalid EMBEDDING_PROVIDER");
   c.EMBEDDING_MODEL ||=
-    c.EMBEDDING_PROVIDER === "local" ? "Xenova/all-MiniLM-L6-v2" : "qwen3.7-text-embedding-flash";
+    c.EMBEDDING_PROVIDER === "local"
+      ? "Xenova/all-MiniLM-L6-v2"
+      : c.EMBEDDING_PROVIDER === "siliconflow"
+        ? "BAAI/bge-m3"
+        : "qwen3.7-text-embedding-flash";
   c.EMBEDDING_REVISION ||=
     c.EMBEDDING_PROVIDER === "local" ? "6fa4bf687ce79106377b66d10009c0e513715e24" : "api-v1";
   c.EMBEDDING_DIMENSIONS = Number(
@@ -84,7 +88,10 @@ export function validateConfig(input: Record<string, unknown>): Record<string, a
   )
     throw new Error("qwen3.7-text-embedding-flash 仅支持 256、512、768、1024 维");
   c.RERANK_MODEL ||= "qwen3.7-text-rerank";
-  c.EMBEDDING_BASE_URL ||= "https://dashscope.aliyuncs.com/compatible-mode/v1";
+  c.EMBEDDING_BASE_URL ||=
+    c.EMBEDDING_PROVIDER === "siliconflow"
+      ? "https://api.siliconflow.cn/v1"
+      : "https://dashscope.aliyuncs.com/compatible-mode/v1";
   c.EMBEDDING_TOKENIZER ||= c.STORAGE_DRIVER === "memory" ? "test:unicode-v1" : "estimate:utf8-v1";
   c.CHAT_TOKENIZER ||= c.STORAGE_DRIVER === "memory" ? "test:unicode-v1" : "estimate:utf8-v1";
   for (const key of ["EMBEDDING_BASE_URL"]) {
